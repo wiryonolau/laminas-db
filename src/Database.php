@@ -21,6 +21,10 @@ class Database
         $this->dbAdapter = $dbAdapter;
     }
 
+    public function getAdapter() {
+        return $this->dbAdapter;
+    }
+
     public function beginTransaction()
     {
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();

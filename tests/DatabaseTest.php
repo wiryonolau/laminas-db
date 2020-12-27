@@ -16,6 +16,7 @@ final class DatabaseTest extends TestCase {
         $repository = new Repository\Repository($db);
 
         $result = $repository->dropTable();
+        $result = $repository->dropTrigger();
         $result = $repository->createTable();
 
         $dummy_data = [
