@@ -1,5 +1,5 @@
 {
-    "name": "itseasy\laminas-db",
+    "name": "itseasy/laminas-db",
     "description": "Laminas Database Wrapper",
     "type": "library",
     "license": "MIT",
