@@ -72,17 +72,15 @@ class Result
 
     public function getFirstRow()
     {
-        $this->resultSet->rewind();
-        return $this->hydrate($this->resultSet->current());
+        return $this->hydrate($this->resultSet->offsetGet(0));
     }
 
     public function getSingleValue()
     {
-        $this->resultSet->rewind();
-        return current((array) $this->resultSet->current());
+        return current((array) $this->resultSet->offsetGet(0));
     }
 
-    public function getRows()
+    public function getRows() : ArrayIterator
     {
         return $this->hydrate($this->resultSet);
     }
