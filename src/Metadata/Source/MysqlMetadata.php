@@ -2,11 +2,11 @@
 
 namespace Itseasy\Database\Metadata\Source;
 
+use Exception;
+use Itseasy\Database\Metadata\Object\MysqlTableObject;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Object\ViewObject;
-use Exception;
 use Laminas\Db\Metadata\Source\MysqlMetadata as LaminasMysqlMetadata;
-use Itseasy\Database\Metadata\Object\MysqlTableObject;
 
 class MysqlMetadata extends LaminasMysqlMetadata
 {
