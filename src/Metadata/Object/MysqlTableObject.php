@@ -24,4 +24,16 @@ class MysqlTableObject extends TableObject {
     public function setType(string $type) : void {
         $this->type = $type;
     }
+
+    public function getEngine() : string {
+        return $this->engine;
+    }
+
+    public function getCollation() : string {
+        return $this->collation;
+    }
+
+    public function getCharset() : string {
+        return $this->charset;
+    }
 }
