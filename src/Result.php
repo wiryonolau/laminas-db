@@ -19,23 +19,32 @@ class Result
     public function __construct(?HydratorInterface $hydrator = null)
     {
         if (is_null($hydrator)) {
-            $this->hydrator = new ReflectionHydrator();
+            $this->setHydrator(ReflectionHydrator::class);
         } else {
-            $this->hydrator = $hydrator;
+            $this->setHydrator($hydrator);
         }
 
         $this->resultSet = new ArrayIterator();
     }
 
-    public function setHydrator(HydratorInterface $hydrator) : self
+    public function setHydrator($hydrator) : self
     {
-        $this->hydrator = $hydrator;
+        if (is_string($hydrator) and class_exists($hydrator)) {
+            $hydrator = new $hydrator;
+        }
+
+        if ($hydrator instanceof HydratorInterface) {
+            $this->hydrator = $hydrator;
+        }
+
         return $this;
     }
 
     public function setObject(string $object) : self
     {
-        $this->object = $object;
+        if (class_exists($object)) {
+            $this->object = $object;
+        }
         return $this;
     }
 
