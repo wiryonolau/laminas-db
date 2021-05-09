@@ -2,15 +2,17 @@
 
 namespace Itseasy\Database;
 
+use Exception;
 use Laminas\Db\Adapter\AdapterInterface;
-use Laminas\Db\Adapter\ParameterContainer;
-use Laminas\Db\Sql\SqlInterface;
-use Laminas\Db\Sql\Sql;
+use Laminas\Db\Adapter\Driver\AbstractConnection;
+use Laminas\Db\Adapter\Driver\StatementInterface;
 use Laminas\Db\Adapter\Exception\RuntimeException;
 use Laminas\Db\Adapter\ExceptionInterface;
+use Laminas\Db\Adapter\ParameterContainer;
+use Laminas\Db\Sql\Sql;
+use Laminas\Db\Sql\SqlInterface;
 use PDO;
 use PDOException;
-use Exception;
 
 class Database
 {
@@ -21,31 +23,36 @@ class Database
         $this->dbAdapter = $dbAdapter;
     }
 
-    public function getAdapter() {
+    public function getAdapter() : AdapterInterface
+    {
         return $this->dbAdapter;
     }
 
-    public function beginTransaction()
+    public function beginTransaction() : AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();
     }
 
-    public function commit()
+    public function commit() : AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->commit();
     }
 
-    public function rollback()
+    public function rollback() : AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->rollback();
     }
 
-    public function getSqlString(SqlInterface $statement) {
+    public function getSqlString(SqlInterface $statement) : string
+    {
         $sql = new Sql($this->dbAdapter);
         return $sql->getSqlStringForSqlObject($statement);
     }
 
-    protected function prepare($statement, $parameters)
+    /**
+     * @throw Exception
+     */
+    protected function prepare($statement, $parameters) : StatementInterface
     {
         if ($statement instanceof SqlInterface) {
             $statement = $this->getSqlString($statement);
@@ -66,7 +73,7 @@ class Database
         // Pass parameters as ParameterContainer
         if ($parameters instanceof ParameterContainer) {
             $stmt->setParameterContainer($parameters);
-        } else if (is_array($parameters)) {
+        } elseif (is_array($parameters)) {
             $parameters = new ParameterContainer($parameters);
             $stmt->setParameterContainer($parameters);
         }

@@ -7,10 +7,11 @@ use Itseasy\Database\Metadata\Object\MysqlTableObject;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Metadata\Source\MysqlMetadata as LaminasMysqlMetadata;
+use Laminas\Db\Metadata\Object\AbstractTableObject;
 
 class MysqlMetadata extends LaminasMysqlMetadata
 {
-    protected function loadTableNameData($schema)
+    protected function loadTableNameData($schema) : void
     {
         if (isset($this->data['table_names'][$schema])) {
             return;
@@ -70,7 +71,8 @@ class MysqlMetadata extends LaminasMysqlMetadata
         $this->data['table_names'][$schema] = $tables;
     }
 
-    protected function getCharset(string $collation) : string {
+    protected function getCharset(string $collation) : string
+    {
         $p = $this->adapter->getPlatform();
 
         $sql = 'SELECT CHARACTER_SET_NAME'
@@ -84,7 +86,10 @@ class MysqlMetadata extends LaminasMysqlMetadata
         }
     }
 
-    public function getTable($tableName, $schema = null)
+    /**
+     * @throw Exception
+     */
+    public function getTable($tableName, $schema = null) : AbstractTableObject
     {
         if ($schema === null) {
             $schema = $this->defaultSchema;
@@ -121,7 +126,7 @@ class MysqlMetadata extends LaminasMysqlMetadata
         return $table;
     }
 
-    protected function loadSchemaData()
+    protected function loadSchemaData() : void
     {
         if (isset($this->data['schemas'])) {
             return;

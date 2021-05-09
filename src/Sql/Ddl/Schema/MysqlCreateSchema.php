@@ -4,8 +4,8 @@ namespace Itseasy\Database\Sql\Ddl\Schema;
 
 use Laminas\Db\Adapter\Platform\PlatformInterface;
 use Laminas\Db\Sql\AbstractSql;
-use Laminas\Db\Sql\TableIdentifier;
 use Laminas\Db\Sql\SqlInterface;
+use Laminas\Db\Sql\TableIdentifier;
 
 class MysqlCreateSchema extends AbstractSql implements SqlInterface
 {
@@ -23,7 +23,8 @@ class MysqlCreateSchema extends AbstractSql implements SqlInterface
         self::COLLATE => "DEFAULT COLLATE %1\$s"
     ];
 
-    public function __construct(string $name, string $charset = null, string $collate = null ) {
+    public function __construct(string $name, string $charset = null, string $collate = null)
+    {
         $this->name = $name;
         $this->charset = (is_null($charset) ? "utf8mb4" : $charset);
         $this->collate = (is_null($collate) ? "utf8mb4_unicode_ci" : $collate);

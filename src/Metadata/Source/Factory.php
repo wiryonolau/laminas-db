@@ -4,9 +4,11 @@ namespace Itseasy\Database\Metadata\Source;
 
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Source\Factory as LaminasSourceFactory;
+use Laminas\Db\Metadata\MetadataInterface;
 
-class Factory extends LaminasSourceFactory {
-    public static function createSourceFromAdapter(Adapter $adapter)
+class Factory extends LaminasSourceFactory
+{
+    public static function createSourceFromAdapter(Adapter $adapter) : MetadataInterface
     {
         $platformName = $adapter->getPlatform()->getName();
 

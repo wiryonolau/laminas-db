@@ -4,8 +4,8 @@ namespace Itseasy\Database\Sql\Ddl\Privilege;
 
 use Laminas\Db\Adapter\Platform\PlatformInterface;
 use Laminas\Db\Sql\AbstractSql;
-use Laminas\Db\Sql\TableIdentifier;
 use Laminas\Db\Sql\SqlInterface;
+use Laminas\Db\Sql\TableIdentifier;
 
 class MysqlGrantPrivilege extends AbstractSql implements SqlInterface
 {
@@ -42,15 +42,18 @@ class MysqlGrantPrivilege extends AbstractSql implements SqlInterface
         }
     }
 
-    public function setAllPrivilege($all_privilege = false) {
+    public function setAllPrivilege($all_privilege = false) : void
+    {
         $this->all_privilege = (bool) $all_privilege;
     }
 
-    public function setAllHost($all_host = false) {
+    public function setAllHost($all_host = false) : void
+    {
         $this->all_host = (bool) $all_host;
     }
 
-    public function setAllObject($all_object = false) {
+    public function setAllObject($all_object = false) : void
+    {
         $this->all_object = (bool) $all_object;
     }
 

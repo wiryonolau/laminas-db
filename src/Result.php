@@ -2,11 +2,11 @@
 
 namespace Itseasy\Database;
 
-use Laminas\Hydrator\HydratorInterface;
-use Laminas\Hydrator\ReflectionHydrator;
+use ArrayIterator;
 use Laminas\Db\Adapter\Driver\ResultInterface;
 use Laminas\Db\ResultSet\ResultSet;
-use ArrayIterator;
+use Laminas\Hydrator\HydratorInterface;
+use Laminas\Hydrator\ReflectionHydrator;
 
 class Result
 {
@@ -79,11 +79,17 @@ class Result
         return $this->lastGeneratedValue;
     }
 
+    /**
+     * @return object
+     */
     public function getFirstRow()
     {
         return $this->hydrate($this->resultSet->offsetGet(0));
     }
 
+    /**
+     * @return mixed
+     */
     public function getSingleValue()
     {
         return current((array) $this->resultSet->offsetGet(0));
@@ -121,6 +127,9 @@ class Result
         return count($this->errors) ? true : false;
     }
 
+    /**
+     * @return objectsf
+     */
     protected function hydrate($rows)
     {
         if (is_null($rows)) {
