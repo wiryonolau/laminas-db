@@ -6,14 +6,19 @@ use Itseasy\Database\Result;
 use Itseasy\Database\Sql\Ddl;
 use Laminas\Db\Adapter\Adapter;
 use PHPUnit\Framework\TestCase;
+use Laminas\Log\Logger;
 
 final class DatabaseTest extends TestCase {
     public function testDatabase() {
+        $logger = new Logger();
+        $logger->addWriter('stream', null, ['stream' => 'php://stderr']);
+
         $adapter = new Adapter([
             'driver'   => 'Pdo_Sqlite',
             'database' => __DIR__.'/db/sqlite.db',
         ]);
-        $db = new Database($adapter);
+        
+        $db = new Database($adapter, $logger);
         $repository = new Repository\Repository($db);
 
         $result = $repository->dropTable();

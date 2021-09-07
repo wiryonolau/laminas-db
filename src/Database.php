@@ -11,16 +11,21 @@ use Laminas\Db\Adapter\ExceptionInterface;
 use Laminas\Db\Adapter\ParameterContainer;
 use Laminas\Db\Sql\Sql;
 use Laminas\Db\Sql\SqlInterface;
+use Laminas\Log\LoggerInterface;
+use Laminas\Log\LoggerAwareTrait;
 use PDO;
 use PDOException;
 
 class Database
 {
+    use LoggerAwareTrait;
+
     protected $dbAdapter;
 
-    public function __construct(AdapterInterface $dbAdapter)
+    public function __construct(AdapterInterface $dbAdapter, LoggerInterface $logger)
     {
         $this->dbAdapter = $dbAdapter;
+        $this->setLogger($logger);
     }
 
     public function getAdapter() : AdapterInterface
@@ -59,14 +64,16 @@ class Database
         }
 
         if (!$statement) {
-            throw new Exception('No statement given');
+            $this->logger->debug("No statement given");
+            throw new Exception("No statement given");
         }
 
         try {
             $stmt = $this->dbAdapter->createStatement();
             $stmt->prepare($statement);
         } catch (RuntimeException $e) {
-            throw new Exception('Cannot prepare statement');
+            $this->logger->debug($e->getMessage());
+            throw new Exception("Cannot prepare statement");
         }
 
         // For special case like transaction that require marking param as PARAM_OUTPUT
@@ -89,6 +96,7 @@ class Database
         try {
             $stmt = $this->prepare($statement, $parameters);
         } catch (Exception $e) {
+            $this->logger->debug($e->getMessage());
             $dbResult->addError($e->getMessage());
             return $dbResult;
         }
@@ -99,10 +107,13 @@ class Database
             $dbResult->setResult($result);
         } catch (ExceptionInterface $e) {
             $message = $e->getPrevious() ? $e->getPrevious()->getMessage() : $e->getMessage();
+            $this->logger->debug($message);
             $dbResult->addError($message);
         } catch (PDOException $e) {
+            $this->logger->debug($e->getMessage());
             $dbResult->addError($e->getMessage());
         } catch (Exception $e) {
+            $this->logger->debug($e->getMessage());
             $dbResult->addError($e->getMessage());
         } finally {
             $stmt->getResource()->closeCursor();
