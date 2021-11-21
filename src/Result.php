@@ -139,7 +139,7 @@ class Result
 
         if (is_null($this->getHydrator())) {
             $obj = new $this->object();
-            if ($obj instanceof ArraySerializableInterface) {
+            if (method_exists($obj, 'populate') && is_callable([$obj, 'populate'])) {
                 $this->setHydrator(new ArraySerializableHydrator());
             } else {
                 $this->setHydrator(new ReflectionHydrator());
