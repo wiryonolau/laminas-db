@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Itseasy\Database;
 
@@ -6,41 +7,26 @@ use ArrayIterator;
 use Laminas\Db\Adapter\Driver\ResultInterface;
 use Laminas\Db\ResultSet\ResultSet;
 use Laminas\Hydrator\HydratorInterface;
+use Laminas\Hydrator\HydratorAwareInterface;
+use Laminas\Hydrator\HydratorAwareTrait;
 use Laminas\Hydrator\ReflectionHydrator;
+use Laminas\Hydrator\ArraySerializableHydrator;
 
-class Result
+class Result implements HydratorAwareInterface
 {
+    use HydratorAwareTrait;
+
     protected $errors = [];
     protected $resultSet;
-    protected $object;
-    protected $hydrator;
+    protected $object = null;
     protected $lastGeneratedValue;
 
-    public function __construct(?HydratorInterface $hydrator = null)
+    public function __construct()
     {
-        if (is_null($hydrator)) {
-            $this->setHydrator(ReflectionHydrator::class);
-        } else {
-            $this->setHydrator($hydrator);
-        }
-
         $this->resultSet = new ArrayIterator();
     }
 
-    public function setHydrator($hydrator) : self
-    {
-        if (is_string($hydrator) and class_exists($hydrator)) {
-            $hydrator = new $hydrator;
-        }
-
-        if ($hydrator instanceof HydratorInterface) {
-            $this->hydrator = $hydrator;
-        }
-
-        return $this;
-    }
-
-    public function setObject(string $object) : self
+    public function setObject(?string $object) : self
     {
         if (class_exists($object)) {
             $this->object = $object;
@@ -60,7 +46,7 @@ class Result
                 $this->resultSet->append($row);
             }
         }
-        $this->lastGeneratedValue = $result->getGeneratedValue();
+        $this->setGeneratedValue(intval($result->getGeneratedValue()));
     }
 
     public function addError($error) : void
@@ -74,7 +60,12 @@ class Result
         }
     }
 
-    public function getGeneratedValue() : int
+    protected function setGeneratedValue(?int $value) : void
+    {
+        $this->lastGeneratedValue = $value;
+    }
+
+    public function getGeneratedValue() : ?int
     {
         return $this->lastGeneratedValue;
     }
@@ -127,8 +118,26 @@ class Result
         return count($this->errors) ? true : false;
     }
 
+    protected function checkHydrator() : bool
+    {
+        if (is_null($this->object) or $this->object == "") {
+            return false;
+        }
+
+        if (is_null($this->getHydrator())) {
+            $obj = new $this->object();
+            if ($obj instanceof ArraySerializableInterface) {
+                $this->setHydrator(new ArraySerializableHydrator());
+            } else {
+                $this->setHydrator(new ReflectionHydrator());
+            }
+        }
+
+        return (!is_null($this->getHydrator()));
+    }
+
     /**
-     * @return objectsf
+     * @return object
      */
     protected function hydrate($rows)
     {
@@ -140,20 +149,22 @@ class Result
             }
         }
 
-        if ($this->object == "") {
+        if (is_null($this->object) or $this->object == "") {
             return $rows;
         }
+
+        $this->checkHydrator();
 
         if ($rows instanceof ArrayIterator) {
             $result = new ArrayIterator();
             foreach ($rows as $row) {
                 $object = new $this->object();
-                $result->append($this->hydrator->hydrate($row, $object));
+                $result->append($this->getHydrator()->hydrate($row, $object));
             }
             return $result;
         }
 
         $object = new $this->object();
-        return $this->hydrator->hydrate($rows, $object);
+        return $this->getHydrator()->hydrate($rows, $object);
     }
 }
