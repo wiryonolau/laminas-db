@@ -7,12 +7,12 @@ use ArrayIterator;
 use Laminas\Db\Adapter\Driver\ResultInterface;
 use Laminas\Db\ResultSet\ResultSet;
 use Laminas\Hydrator\HydratorInterface;
-use Laminas\Hydrator\HydratorAwareInterface;
 use Laminas\Hydrator\HydratorAwareTrait;
 use Laminas\Hydrator\ReflectionHydrator;
 use Laminas\Hydrator\ArraySerializableHydrator;
+use Laminas\Stdlib\ArraySerializableInterface;
 
-class Result implements HydratorAwareInterface
+class Result
 {
     use HydratorAwareTrait;
 
@@ -31,6 +31,19 @@ class Result implements HydratorAwareInterface
         if (class_exists($object)) {
             $this->object = $object;
         }
+        return $this;
+    }
+
+    public function setHydrator($hydrator) : self
+    {
+        if (is_string($hydrator) and class_exists($hydrator)) {
+            $hydrator = new $hydrator;
+        }
+
+        if ($hydrator instanceof HydratorInterface) {
+            $this->hydrator = $hydrator;
+        }
+
         return $this;
     }
 
