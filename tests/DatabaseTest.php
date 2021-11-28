@@ -43,7 +43,7 @@ final class DatabaseTest extends TestCase {
         ];
 
         foreach ($result as $r) {
-            $r->setObject(Model\TestModel::class);
+            $r->setArrayObjectPrototype(Model\TestModel::class);
             $obj = $r->getFirstRow();
             $this->assertEquals($obj->name, $dummy_data[($obj->id - 1)]);
         }
@@ -66,11 +66,9 @@ final class DatabaseTest extends TestCase {
         $this->assertEquals($r->getFirstRow() instanceof Model\TestModel, true);
         $this->assertEquals($r->getRows() instanceof Model\TestCollectionModel, true);
 
-        $result = new Result();
-        $result->setResultSetObjectPrototype(Model\TestCollectionModel::class, Model\TestModel::class);
-        $r = $repository->getData(null, $result);
-        $this->assertEquals($r->getFirstRow() instanceof Model\TestModel, true);
-        $this->assertEquals($r->getRows() instanceof Model\TestCollectionModel, true);
+        $r = $repository->getData();
+        $this->assertEquals($r->getFirstRow(Model\TestModel::class) instanceof Model\TestModel, true);
+        $this->assertEquals($r->getRows(Model\TestCollectionModel::class) instanceof Model\TestCollectionModel, true);
 
     }
 

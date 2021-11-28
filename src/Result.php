@@ -7,8 +7,8 @@ use ArrayIterator;
 use ArrayObject;
 use Exception;
 use Itseasy\Database\ResultInterface as ItseasyResultInterface;
-use Laminas\Db\Adapter\Driver\ResultInterface;
 use Laminas\Db\ResultSet\ResultSet;
+use Laminas\Db\Adapter\Driver\ResultInterface;
 use Laminas\Db\ResultSet\ResultSetInterface;
 use Traversable;
 
@@ -16,7 +16,6 @@ class Result implements ItseasyResultInterface
 {
     protected $errors = [];
     protected $resultSet;
-    protected $object = null;
     protected $lastGeneratedValue;
     protected $resultSetObjectPrototype;
 
@@ -29,45 +28,34 @@ class Result implements ItseasyResultInterface
             $this->resultSet = new ResultSet();
         }
 
-        $this->resultSetObjectPrototype = new ArrayIterator();
-
-        if (!is_null($arrayObjectPrototype)) {
-            $this->resultSet->setArrayObjectPrototype($arrayObjectPrototype);
-        }
-
         if (!is_null($resultSetObjectPrototype)) {
             $this->setResultSetObjectPrototype($resultSetObjectPrototype);
+        } else {
+            $this->resultSetObjectPrototype = new ArrayIterator();
         }
-    }
-
-    public function setObject($object) : self
-    {
-        return $this->setArrayObjectPrototype($object);
-    }
-
-    public function setArrayObjectPrototype($arrayObjectPrototype) : self
-    {
-        if (is_string($arrayObjectPrototype) and class_exists($arrayObjectPrototype)) {
-            $arrayObjectPrototype = new $arrayObjectPrototype;
-        }
-        $this->resultSet->setArrayObjectPrototype($arrayObjectPrototype);
-        return $this;
-    }
-
-    public function setResultSetObjectPrototype(
-        $resultSetObjectPrototype,
-        $arrayObjectPrototype = null
-    ) : self {
-        if (is_string($resultSetObjectPrototype)
-            and class_exists($resultSetObjectPrototype)) {
-            $resultSetObjectPrototype = new $resultSetObjectPrototype;
-        }
-        $this->resultSetObjectPrototype = $resultSetObjectPrototype;
 
         if (!is_null($arrayObjectPrototype)) {
             $this->setArrayObjectPrototype($arrayObjectPrototype);
         }
 
+    }
+
+    public function setArrayObjectPrototype($object) : self
+    {
+        if (is_string($object) and class_exists($object)) {
+            $object = new $object;
+        }
+
+        $this->resultSet->setArrayObjectPrototype($object);
+        return $this;
+    }
+
+    public function setResultSetObjectPrototype($object) : self
+    {
+        if (is_string($object) and class_exists($object)) {
+            $object = new $object;
+        }
+        $this->resultSetObjectPrototype = $object;
         return $this;
     }
 
@@ -104,8 +92,12 @@ class Result implements ItseasyResultInterface
     /**
      * @return object|null
      */
-    public function getFirstRow()
+    public function getFirstRow($arrayObjectPrototype = null)
     {
+        if (!is_null($arrayObjectPrototype)) {
+            $this->setArrayObjectPrototype($arrayObjectPrototype);
+        }
+
         $this->resultSet->rewind();
         if ($this->resultSet->getArrayObjectPrototype() instanceof ArrayObject) {
             return $this->resultSet->current()->getArrayCopy();
@@ -125,21 +117,33 @@ class Result implements ItseasyResultInterface
         }
     }
 
-    public function getRows() : Traversable
+    public function getRows($resultSetObjectPrototype = null) : Traversable
     {
         if (!$this->resultSet->count()) {
             return $this->resultSet->getDataSource();
         }
+
+        if (!is_null($resultSetObjectPrototype)) {
+            $this->setResultSetObjectPrototype($resultSetObjectPrototype);
+        }
+
+        $resultSetObjectPrototype = clone $this->resultSetObjectPrototype;
 
         while ($this->resultSet->valid()) {
             $row = $this->resultSet->current();
             if ($this->resultSet->getArrayObjectPrototype() instanceof ArrayObject) {
                 $row = $row->getArrayCopy();
             }
-            $this->resultSetObjectPrototype->append($row);
+
+            if (is_array($resultSetObjectPrototype)) {
+                $resultSetObjectPrototype[] = $row;
+            } else if (method_exists($resultSetObjectPrototype, "append")) {
+                $resultSetObjectPrototype->append($row);
+            }
+
             $this->resultSet->next();
         }
-        return $this->resultSetObjectPrototype;
+        return $resultSetObjectPrototype;
     }
 
     public function getErrors() : array
