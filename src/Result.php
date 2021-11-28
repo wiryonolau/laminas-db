@@ -117,7 +117,10 @@ class Result implements ItseasyResultInterface
         }
     }
 
-    public function getRows($resultSetObjectPrototype = null) : Traversable
+    public function getRows(
+        $resultSetObjectPrototype = null,
+        $arrayObjectPrototype = null
+    ) : Traversable
     {
         if (!$this->resultSet->count()) {
             return $this->resultSet->getDataSource();
@@ -125,6 +128,10 @@ class Result implements ItseasyResultInterface
 
         if (!is_null($resultSetObjectPrototype)) {
             $this->setResultSetObjectPrototype($resultSetObjectPrototype);
+        }
+
+        if (!is_null($arrayObjectPrototype)) {
+            $this->setArrayObjectPrototype($arrayObjectPrototype);
         }
 
         $resultSetObjectPrototype = clone $this->resultSetObjectPrototype;

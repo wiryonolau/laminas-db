@@ -70,6 +70,11 @@ final class DatabaseTest extends TestCase {
         $this->assertEquals($r->getFirstRow(Model\TestModel::class) instanceof Model\TestModel, true);
         $this->assertEquals($r->getRows(Model\TestCollectionModel::class) instanceof Model\TestCollectionModel, true);
 
+        $rows = $r->getRows(ArrayIterator::class, Model\TestModel::class);
+        foreach ($rows as $r) {
+            $this->assertEquals($r instanceof  Model\TestModel, true);
+        }
+
     }
 
     public function testDdlDatabase() {
