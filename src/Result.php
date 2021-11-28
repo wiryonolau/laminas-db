@@ -118,12 +118,11 @@ class Result implements ItseasyResultInterface
      */
     public function getSingleValue()
     {
-        $row = $this->getFirstRow();
-        if (!is_array($row) and method_exists($row, "getArrayCopy")) {
-            $row = $row->getArrayCopy();
-            return reset($row);
+        try {
+            return current($this->getFirstRow());
+        } catch (Exception $e) {
+            return null;
         }
-        throw new Exception("Invalid row format");
     }
 
     public function getRows() : Traversable
