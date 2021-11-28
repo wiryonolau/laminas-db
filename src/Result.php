@@ -4,44 +4,68 @@ declare(strict_types=1);
 namespace Itseasy\Database;
 
 use ArrayIterator;
+use ArrayObject;
+use Exception;
+use Itseasy\Database\ResultInterface as ItseasyResultInterface;
 use Laminas\Db\Adapter\Driver\ResultInterface;
 use Laminas\Db\ResultSet\ResultSet;
-use Laminas\Hydrator\HydratorInterface;
-use Laminas\Hydrator\HydratorAwareTrait;
-use Laminas\Hydrator\ReflectionHydrator;
-use Laminas\Hydrator\ArraySerializableHydrator;
-use Laminas\Stdlib\ArraySerializableInterface;
+use Laminas\Db\ResultSet\ResultSetInterface;
+use Traversable;
 
-class Result
+class Result implements ItseasyResultInterface
 {
-    use HydratorAwareTrait;
-
     protected $errors = [];
     protected $resultSet;
     protected $object = null;
     protected $lastGeneratedValue;
+    protected $resultSetObjectPrototype;
 
-    public function __construct()
-    {
-        $this->resultSet = new ArrayIterator();
+    public function __construct(
+        $arrayObjectPrototype = null,
+        $resultSetObjectPrototype = null,
+        ResultSetInterface $resultSet = null
+    ) {
+        if (is_null($resultSet)) {
+            $this->resultSet = new ResultSet();
+        }
+
+        $this->resultSetObjectPrototype = new ArrayIterator();
+
+        if (!is_null($arrayObjectPrototype)) {
+            $this->resultSet->setArrayObjectPrototype($arrayObjectPrototype);
+        }
+
+        if (!is_null($resultSetObjectPrototype)) {
+            $this->setResultSetObjectPrototype($resultSetObjectPrototype);
+        }
     }
 
-    public function setObject(?string $object) : self
+    public function setObject($object) : self
     {
-        if (class_exists($object)) {
-            $this->object = $object;
+        return $this->setArrayObjectPrototype($object);
+    }
+
+    public function setArrayObjectPrototype($arrayObjectPrototype) : self
+    {
+        if (is_string($arrayObjectPrototype) and class_exists($arrayObjectPrototype)) {
+            $arrayObjectPrototype = new $arrayObjectPrototype;
         }
+        $this->resultSet->setArrayObjectPrototype($arrayObjectPrototype);
         return $this;
     }
 
-    public function setHydrator($hydrator) : self
-    {
-        if (is_string($hydrator) and class_exists($hydrator)) {
-            $hydrator = new $hydrator;
+    public function setResultSetObjectPrototype(
+        $resultSetObjectPrototype,
+        $arrayObjectPrototype = null
+    ) : self {
+        if (is_string($resultSetObjectPrototype)
+            and class_exists($resultSetObjectPrototype)) {
+            $resultSetObjectPrototype = new $resultSetObjectPrototype;
         }
+        $this->resultSetObjectPrototype = $resultSetObjectPrototype;
 
-        if ($hydrator instanceof HydratorInterface) {
-            $this->hydrator = $hydrator;
+        if (!is_null($arrayObjectPrototype)) {
+            $this->setArrayObjectPrototype($arrayObjectPrototype);
         }
 
         return $this;
@@ -51,13 +75,7 @@ class Result
     {
         if ($result->isQueryResult()) {
             $rowset = $result->getResource()->fetchAll(\PDO::FETCH_ASSOC);
-
-            $resultSet = new ResultSet();
-            $resultSet->initialize($rowset);
-
-            foreach ($resultSet->getDataSource() as $row) {
-                $this->resultSet->append($row);
-            }
+            $this->resultSet->initialize($rowset);
         }
         $this->setGeneratedValue(intval($result->getGeneratedValue()));
     }
@@ -84,11 +102,15 @@ class Result
     }
 
     /**
-     * @return object
+     * @return object|null
      */
     public function getFirstRow()
     {
-        return $this->hydrate($this->resultSet->offsetGet(0));
+        $this->resultSet->rewind();
+        if ($this->resultSet->getArrayObjectPrototype() instanceof ArrayObject) {
+            return $this->resultSet->current()->getArrayCopy();
+        }
+        return $this->resultSet->current();
     }
 
     /**
@@ -96,12 +118,29 @@ class Result
      */
     public function getSingleValue()
     {
-        return current((array) $this->resultSet->offsetGet(0));
+        $row = $this->getFirstRow();
+        if (!is_array($row) and method_exists($row, "getArrayCopy")) {
+            $row = $row->getArrayCopy();
+            return reset($row);
+        }
+        throw new Exception("Invalid row format");
     }
 
-    public function getRows() : ArrayIterator
+    public function getRows() : Traversable
     {
-        return $this->hydrate($this->resultSet);
+        if (!$this->resultSet->count()) {
+            return $this->resultSet->getDataSource();
+        }
+
+        while ($this->resultSet->valid()) {
+            $row = $this->resultSet->current();
+            if ($this->resultSet->getArrayObjectPrototype() instanceof ArrayObject) {
+                $row = $row->getArrayCopy();
+            }
+            $this->resultSetObjectPrototype->append($row);
+            $this->resultSet->next();
+        }
+        return $this->resultSetObjectPrototype;
     }
 
     public function getErrors() : array
@@ -129,55 +168,5 @@ class Result
     public function isError() : bool
     {
         return count($this->errors) ? true : false;
-    }
-
-    protected function checkHydrator() : bool
-    {
-        if (is_null($this->object) or $this->object == "") {
-            return false;
-        }
-
-        if (is_null($this->getHydrator())) {
-            $obj = new $this->object();
-            if (method_exists($obj, 'populate') && is_callable([$obj, 'populate'])) {
-                $this->setHydrator(new ArraySerializableHydrator());
-            } else {
-                $this->setHydrator(new ReflectionHydrator());
-            }
-        }
-
-        return (!is_null($this->getHydrator()));
-    }
-
-    /**
-     * @return object
-     */
-    protected function hydrate($rows)
-    {
-        if (is_null($rows)) {
-            if ($this->object == "") {
-                return $rows;
-            } else {
-                return new $this->object();
-            }
-        }
-
-        if (is_null($this->object) or $this->object == "") {
-            return $rows;
-        }
-
-        $this->checkHydrator();
-
-        if ($rows instanceof ArrayIterator) {
-            $result = new ArrayIterator();
-            foreach ($rows as $row) {
-                $object = new $this->object();
-                $result->append($this->getHydrator()->hydrate($row, $object));
-            }
-            return $result;
-        }
-
-        $object = new $this->object();
-        return $this->getHydrator()->hydrate($rows, $object);
     }
 }

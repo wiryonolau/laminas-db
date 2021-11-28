@@ -1,12 +1,13 @@
 <?php
 namespace Itseasy\DatabaseTest;
 
+use ArrayIterator;
 use Itseasy\Database\Database;
 use Itseasy\Database\Result;
 use Itseasy\Database\Sql\Ddl;
 use Laminas\Db\Adapter\Adapter;
-use PHPUnit\Framework\TestCase;
 use Laminas\Log\Logger;
+use PHPUnit\Framework\TestCase;
 
 final class DatabaseTest extends TestCase {
     public function testDatabase() {
@@ -17,7 +18,7 @@ final class DatabaseTest extends TestCase {
             'driver'   => 'Pdo_Sqlite',
             'database' => __DIR__.'/db/sqlite.db',
         ]);
-        
+
         $db = new Database($adapter, $logger);
         $repository = new Repository\Repository($db);
 
@@ -46,6 +47,30 @@ final class DatabaseTest extends TestCase {
             $obj = $r->getFirstRow();
             $this->assertEquals($obj->name, $dummy_data[($obj->id - 1)]);
         }
+
+        $this->assertEquals($result[0]->getFirstRow() instanceof Model\TestModel, true);
+        $this->assertEquals($result[0]->getRows() instanceof ArrayIterator, true);
+        $this->assertEquals($result[0]->getSingleValue(), 2);
+
+        $result = new Result(new Model\TestModel());
+        $r = $repository->getData(null, $result);
+        $this->assertEquals($r->getFirstRow() instanceof Model\TestModel, true);
+
+        $result = new Result(null, new Model\TestCollectionModel());
+        $r = $repository->getData(null, $result);
+        $this->assertEquals($r->getFirstRow() instanceof Model\TestModel, false);
+        $this->assertEquals($r->getRows() instanceof Model\TestCollectionModel, true);
+
+        $result = new Result(new Model\TestModel(), new Model\TestCollectionModel());
+        $r = $repository->getData(null, $result);
+        $this->assertEquals($r->getFirstRow() instanceof Model\TestModel, true);
+        $this->assertEquals($r->getRows() instanceof Model\TestCollectionModel, true);
+
+        $result = new Result();
+        $result->setResultSetObjectPrototype(Model\TestCollectionModel::class, Model\TestModel::class);
+        $r = $repository->getData(null, $result);
+        $this->assertEquals($r->getFirstRow() instanceof Model\TestModel, true);
+        $this->assertEquals($r->getRows() instanceof Model\TestCollectionModel, true);
 
     }
 

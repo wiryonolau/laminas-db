@@ -3,6 +3,9 @@
 namespace Itseasy\DatabaseTest\Repository;
 
 use Itseasy\Database\Database;
+use Itseasy\Database\Result;
+use Itseasy\DatabaseTest\Model\TestCollectionModel;
+use Itseasy\DatabaseTest\Model\TestModel;
 use Laminas\Db\Sql;
 use PDO;
 
@@ -70,7 +73,7 @@ class Repository {
         return $this->db->execute($insert);
     }
 
-    public function getData(?string $format = null) {
+    public function getData(?string $format = null, $result = null) {
         $parameters = [];
 
         switch ($format) {
@@ -88,6 +91,7 @@ class Repository {
                 $select = new Sql\Select("test");
                 $select->where(["id" => 2]);
         }
-        return $this->db->execute($select, $parameters);
+
+        return $this->db->execute($select, $parameters, $result);
     }
 }

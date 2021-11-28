@@ -11,8 +11,8 @@ use Laminas\Db\Adapter\ExceptionInterface;
 use Laminas\Db\Adapter\ParameterContainer;
 use Laminas\Db\Sql\Sql;
 use Laminas\Db\Sql\SqlInterface;
-use Laminas\Log\LoggerInterface;
 use Laminas\Log\LoggerAwareTrait;
+use Laminas\Log\LoggerInterface;
 use PDO;
 use PDOException;
 
@@ -22,8 +22,10 @@ class Database
 
     protected $dbAdapter;
 
-    public function __construct(AdapterInterface $dbAdapter, LoggerInterface $logger)
-    {
+    public function __construct(
+        AdapterInterface $dbAdapter,
+        LoggerInterface $logger
+    ) {
         $this->dbAdapter = $dbAdapter;
         $this->setLogger($logger);
     }
@@ -88,9 +90,17 @@ class Database
         return $stmt;
     }
 
-    public function execute($statement, array $parameters = [], bool $disconnect = false) : Result
-    {
-        $dbResult = new Result();
+    public function execute(
+        $statement,
+        array $parameters = [],
+        ?ResultInterface $result = null,
+        bool $disconnect = false
+    ) : Result {
+        if (is_null($result)) {
+            $dbResult = new Result();
+        } else {
+            $dbResult = $result;
+        }
 
         // Prepare statement and parameters
         try {
