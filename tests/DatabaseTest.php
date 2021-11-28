@@ -43,7 +43,7 @@ final class DatabaseTest extends TestCase {
         ];
 
         foreach ($result as $r) {
-            $r->setArrayObjectPrototype(Model\TestModel::class);
+            $r->setObjectPrototype(Model\TestModel::class);
             $obj = $r->getFirstRow();
             $this->assertEquals($obj->name, $dummy_data[($obj->id - 1)]);
         }
@@ -74,7 +74,6 @@ final class DatabaseTest extends TestCase {
         foreach ($rows as $r) {
             $this->assertEquals($r instanceof  Model\TestModel, true);
         }
-
     }
 
     public function testDdlDatabase() {

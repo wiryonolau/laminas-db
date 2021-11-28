@@ -7,9 +7,10 @@ use ArrayIterator;
 use ArrayObject;
 use Exception;
 use Itseasy\Database\ResultInterface as ItseasyResultInterface;
-use Laminas\Db\ResultSet\ResultSet;
 use Laminas\Db\Adapter\Driver\ResultInterface;
+use Laminas\Db\ResultSet\HydratingResultSet;
 use Laminas\Db\ResultSet\ResultSetInterface;
+use Laminas\Hydrator\HydratorInterface;
 use Traversable;
 
 class Result implements ItseasyResultInterface
@@ -20,13 +21,10 @@ class Result implements ItseasyResultInterface
     protected $resultSetObjectPrototype;
 
     public function __construct(
-        $arrayObjectPrototype = null,
-        $resultSetObjectPrototype = null,
-        ResultSetInterface $resultSet = null
+        $objectPrototype = null,
+        $resultSetObjectPrototype = null
     ) {
-        if (is_null($resultSet)) {
-            $this->resultSet = new ResultSet();
-        }
+        $this->resultSet = new HydratingResultSet();
 
         if (!is_null($resultSetObjectPrototype)) {
             $this->setResultSetObjectPrototype($resultSetObjectPrototype);
@@ -34,19 +32,29 @@ class Result implements ItseasyResultInterface
             $this->resultSetObjectPrototype = new ArrayIterator();
         }
 
-        if (!is_null($arrayObjectPrototype)) {
-            $this->setArrayObjectPrototype($arrayObjectPrototype);
+        if (!is_null($objectPrototype)) {
+            $this->setObjectPrototype($objectPrototype);
         }
-
     }
 
-    public function setArrayObjectPrototype($object) : self
+    public function getHydrator() : HydratorInterface
+    {
+        return $this->resultSet->getHydrator();
+    }
+
+    public function setHydrator(HydratorInterface $hydrator) : self
+    {
+        $this->resultSet->setHydrator($hydrator);
+        return $this;
+    }
+
+    public function setObjectPrototype($object) : self
     {
         if (is_string($object) and class_exists($object)) {
             $object = new $object;
         }
 
-        $this->resultSet->setArrayObjectPrototype($object);
+        $this->resultSet->setObjectPrototype($object);
         return $this;
     }
 
@@ -92,14 +100,14 @@ class Result implements ItseasyResultInterface
     /**
      * @return object|null
      */
-    public function getFirstRow($arrayObjectPrototype = null)
+    public function getFirstRow($objectPrototype = null)
     {
-        if (!is_null($arrayObjectPrototype)) {
-            $this->setArrayObjectPrototype($arrayObjectPrototype);
+        if (!is_null($objectPrototype)) {
+            $this->setObjectPrototype($objectPrototype);
         }
 
         $this->resultSet->rewind();
-        if ($this->resultSet->getArrayObjectPrototype() instanceof ArrayObject) {
+        if ($this->resultSet->getObjectPrototype() instanceof ArrayObject) {
             return $this->resultSet->current()->getArrayCopy();
         }
         return $this->resultSet->current();
@@ -117,34 +125,38 @@ class Result implements ItseasyResultInterface
         }
     }
 
+    /**
+     * @return array|Traversable
+     */
     public function getRows(
         $resultSetObjectPrototype = null,
-        $arrayObjectPrototype = null
-    ) : Traversable
-    {
-        if (!$this->resultSet->count()) {
-            return $this->resultSet->getDataSource();
-        }
-
+        $objectPrototype = null
+    ) {
         if (!is_null($resultSetObjectPrototype)) {
             $this->setResultSetObjectPrototype($resultSetObjectPrototype);
         }
 
-        if (!is_null($arrayObjectPrototype)) {
-            $this->setArrayObjectPrototype($arrayObjectPrototype);
+        if (!is_null($objectPrototype)) {
+            $this->setObjectPrototype($objectPrototype);
         }
 
-        $resultSetObjectPrototype = clone $this->resultSetObjectPrototype;
+        if (is_array($this->resultSetObjectPrototype)) {
+            $resultSetObjectPrototype = [];
+        } else {
+            $resultSetObjectPrototype = clone $this->resultSetObjectPrototype;
+        }
 
+        $this->resultSet->rewind();
         while ($this->resultSet->valid()) {
+            // hydrate object
             $row = $this->resultSet->current();
-            if ($this->resultSet->getArrayObjectPrototype() instanceof ArrayObject) {
+            if ($this->resultSet->getObjectPrototype() instanceof ArrayObject) {
                 $row = $row->getArrayCopy();
             }
 
             if (is_array($resultSetObjectPrototype)) {
                 $resultSetObjectPrototype[] = $row;
-            } else if (method_exists($resultSetObjectPrototype, "append")) {
+            } elseif (method_exists($resultSetObjectPrototype, "append")) {
                 $resultSetObjectPrototype->append($row);
             }
 
