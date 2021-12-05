@@ -98,12 +98,16 @@ class Result implements ItseasyResultInterface
     }
 
     /**
-     * @return object|null
+     * @return object
      */
     public function getFirstRow($objectPrototype = null)
     {
         if (!is_null($objectPrototype)) {
             $this->setObjectPrototype($objectPrototype);
+        }
+
+        if (!$this->resultSet->count()) {
+            return $this->resultSet->getObjectPrototype();
         }
 
         $this->resultSet->rewind();
