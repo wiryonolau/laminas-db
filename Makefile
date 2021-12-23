@@ -34,14 +34,14 @@ composer-install:
         -w /srv/$$(basename "`pwd`") \
         -e COMPOSER_HOME="/srv/$$(basename "`pwd`")/.composer" \
         --user $$(id -u):$$(id -g) \
-    composer composer install --no-plugins --no-scripts --no-dev --prefer-dist -v --ignore-platform-reqs
+    composer composer install --no-plugins --no-scripts --prefer-dist -v
 composer-update:
 	docker run --rm -it \
         -v $$(pwd):/srv/$$(basename "`pwd`") \
         -w /srv/$$(basename "`pwd`") \
         -e COMPOSER_HOME="/srv/$$(basename "`pwd`")/.composer" \
         --user $$(id -u):$$(id -g) \
-    composer composer update -v --no-dev --ignore-platform-reqs
+	composer composer update --no-plugins --no-scripts  --prefer-dist -v
 composer:
 	docker run --rm -it \
         -v $$(pwd):/srv/$$(basename "`pwd`") \
