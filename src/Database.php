@@ -113,6 +113,9 @@ class Database
 
         // Execute statement
         try {
+            if(!$this->dbAdapter->getDriver()->getConnection()->isConnected()) {
+                $this->dbAdapter->getDriver()->getConnection()->connect();
+            }
             $result = $stmt->execute();
             $dbResult->setResult($result);
         } catch (ExceptionInterface $e) {
