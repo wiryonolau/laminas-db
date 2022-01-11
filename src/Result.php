@@ -150,6 +150,10 @@ class Result implements ItseasyResultInterface
             $resultSetObjectPrototype = clone $this->resultSetObjectPrototype;
         }
 
+        if (!$this->resultSet->count()) {
+            return $resultSetObjectPrototype;
+        }
+
         $this->resultSet->rewind();
         while ($this->resultSet->valid()) {
             // hydrate object
