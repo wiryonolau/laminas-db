@@ -146,11 +146,9 @@ class Result implements ItseasyResultInterface
 
         if (is_array($this->resultSetObjectPrototype)) {
             $resultSetObjectPrototype = [];
-        } else if ($this->resultSetObjectPrototype instanceof ArrayIterator){
-            // Cannot clone ArrayIterator , will cause nested storage attribute
-            $resultSetObjectPrototype = new ArrayIterator();
         } else {
-            $resultSetObjectPrototype = clone $this->resultSetObjectPrototype;
+            $class = get_class($this->resultSetObjectPrototype);
+            $resultSetObjectPrototype = new $class;
         }
 
         if (!$this->resultSet->count()) {
