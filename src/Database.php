@@ -113,7 +113,9 @@ class Database
 
         // Execute statement
         try {
-            if(!$this->dbAdapter->getDriver()->getConnection()->isConnected()) {
+            // Can only check if connection is cut off by php
+            // If connection is cut off by database, this value will remain true ( Database has gone away )
+            if (!$this->dbAdapter->getDriver()->getConnection()->isConnected()) {
                 $this->dbAdapter->getDriver()->getConnection()->connect();
             }
             $result = $stmt->execute();
