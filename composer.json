@@ -23,7 +23,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Itseasy\\Database\\": "src/"
+            "Itseasy\\Database\\": "src/",
+            "Itseasy\\Repository\\": "src/Repository/"
         }
     },
     "autoload-dev": {
