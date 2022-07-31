@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Itseasy\Database;
@@ -37,18 +38,18 @@ class Result implements ItseasyResultInterface
         }
     }
 
-    public function getHydrator() : HydratorInterface
+    public function getHydrator(): HydratorInterface
     {
         return $this->resultSet->getHydrator();
     }
 
-    public function setHydrator(HydratorInterface $hydrator) : self
+    public function setHydrator(HydratorInterface $hydrator): self
     {
         $this->resultSet->setHydrator($hydrator);
         return $this;
     }
 
-    public function setObjectPrototype($object) : self
+    public function setObjectPrototype($object): self
     {
         if (is_string($object) and class_exists($object)) {
             $object = new $object;
@@ -58,7 +59,7 @@ class Result implements ItseasyResultInterface
         return $this;
     }
 
-    public function setResultSetObjectPrototype($object) : self
+    public function setResultSetObjectPrototype($object): self
     {
         if (is_string($object) and class_exists($object)) {
             $object = new $object;
@@ -67,7 +68,7 @@ class Result implements ItseasyResultInterface
         return $this;
     }
 
-    public function setResult(ResultInterface $result) : void
+    public function setResult(ResultInterface $result): void
     {
         if ($result->isQueryResult()) {
             $rowset = $result->getResource()->fetchAll(\PDO::FETCH_ASSOC);
@@ -76,7 +77,7 @@ class Result implements ItseasyResultInterface
         $this->setGeneratedValue(intval($result->getGeneratedValue()));
     }
 
-    public function addError($error) : void
+    public function addError($error): void
     {
         preg_match('/\(([^)]+)\)/', $error, $matches);
         if (empty($matches[1])) {
@@ -87,12 +88,12 @@ class Result implements ItseasyResultInterface
         }
     }
 
-    protected function setGeneratedValue(?int $value) : void
+    protected function setGeneratedValue(?int $value): void
     {
         $this->lastGeneratedValue = $value;
     }
 
-    public function getGeneratedValue() : ?int
+    public function getGeneratedValue(): ?int
     {
         return $this->lastGeneratedValue;
     }
@@ -146,7 +147,7 @@ class Result implements ItseasyResultInterface
 
         if (is_array($this->resultSetObjectPrototype)) {
             $resultSetObjectPrototype = [];
-        } else if ($this->resultSetObjectPrototype instanceof ArrayIterator){
+        } else if ($this->resultSetObjectPrototype instanceof ArrayIterator) {
             // Cannot clone instanceof ArrayIterator , will cause nested storage attribute
             $class = get_class($this->resultSetObjectPrototype);
             $resultSetObjectPrototype = new $class;
@@ -177,12 +178,12 @@ class Result implements ItseasyResultInterface
         return $resultSetObjectPrototype;
     }
 
-    public function getErrors() : array
+    public function getErrors(): array
     {
         return $this->errors;
     }
 
-    public function isSuccess(bool $check_empty = false) : bool
+    public function isSuccess(bool $check_empty = false): bool
     {
         if ($check_empty) {
             $noerror = ($this->isError() ? false : true);
@@ -194,12 +195,12 @@ class Result implements ItseasyResultInterface
         }
     }
 
-    public function isEmpty() : bool
+    public function isEmpty(): bool
     {
         return $this->resultSet->count() > 0 ? false : true;
     }
 
-    public function isError() : bool
+    public function isError(): bool
     {
         return count($this->errors) ? true : false;
     }

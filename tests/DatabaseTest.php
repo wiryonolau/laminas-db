@@ -1,4 +1,5 @@
 <?php
+
 namespace Itseasy\DatabaseTest;
 
 use ArrayIterator;
@@ -9,14 +10,16 @@ use Laminas\Db\Adapter\Adapter;
 use Laminas\Log\Logger;
 use PHPUnit\Framework\TestCase;
 
-final class DatabaseTest extends TestCase {
-    public function testDatabase() {
+final class DatabaseTest extends TestCase
+{
+    public function testDatabase()
+    {
         $logger = new Logger();
         $logger->addWriter('stream', null, ['stream' => 'php://stderr']);
 
         $adapter = new Adapter([
             'driver'   => 'Pdo_Sqlite',
-            'database' => __DIR__.'/db/sqlite.db',
+            'database' => __DIR__ . '/db/sqlite.db',
         ]);
 
         $db = new Database($adapter, $logger);
@@ -31,7 +34,7 @@ final class DatabaseTest extends TestCase {
             "test2"
         ];
 
-        foreach ($dummy_data as $index => $value)  {
+        foreach ($dummy_data as $index => $value) {
             $result = $repository->populateTable($value);
             $this->assertEquals($result->getGeneratedValue(), $index + 1);
         }
@@ -76,7 +79,8 @@ final class DatabaseTest extends TestCase {
         }
     }
 
-    public function testDdlDatabase() {
+    public function testDdlDatabase()
+    {
         $alter = new Ddl\Schema\MysqlAlterSchema("test", "utf8");
         $alter_sql = "ALTER SCHEMA test DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8mb4_unicode_ci";
         $this->assertEquals($alter->getSqlString(), $alter_sql);
@@ -90,6 +94,3 @@ final class DatabaseTest extends TestCase {
         $this->assertEquals($grant->getSqlString(), $grant_sql);
     }
 }
-
-
-?>

@@ -9,19 +9,23 @@ use Itseasy\DatabaseTest\Model\TestModel;
 use Laminas\Db\Sql;
 use PDO;
 
-class Repository {
+class Repository
+{
     protected $db;
 
-    public function __construct(Database $db) {
+    public function __construct(Database $db)
+    {
         $this->db = $db;
     }
 
-    public function dropTable() {
+    public function dropTable()
+    {
         $drop = "DROP TABLE IF EXISTS test";
         return $this->db->execute($drop);
     }
 
-    public function dropTrigger() {
+    public function dropTrigger()
+    {
         $drop = "DROP TRIGGER IF EXISTS test_AINS";
         $this->db->execute($drop);
 
@@ -29,7 +33,8 @@ class Repository {
         $this->db->execute($drop);
     }
 
-    public function createTable() {
+    public function createTable()
+    {
         $create = new Sql\Ddl\CreateTable("test");
         $id = new Sql\Ddl\Column\Integer("id", true);
         $id->setOption('AUTO_INCREMENT', true);
@@ -62,10 +67,10 @@ class Repository {
         END;
         ";
         $this->db->execute($trigger_aupd);
-
     }
 
-    public function populateTable($name) {
+    public function populateTable($name)
+    {
         $insert = new Sql\Insert("test");
         $insert->columns(["name"]);
         $insert->values([$name]);
@@ -73,7 +78,8 @@ class Repository {
         return $this->db->execute($insert);
     }
 
-    public function getData(?string $format = null, $result = null) {
+    public function getData(?string $format = null, $result = null)
+    {
         $parameters = [];
 
         switch ($format) {

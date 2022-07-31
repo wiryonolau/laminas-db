@@ -30,36 +30,36 @@ class Database
         $this->setLogger($logger);
     }
 
-    public function getAdapter() : AdapterInterface
+    public function getAdapter(): AdapterInterface
     {
         return $this->dbAdapter;
     }
 
-    public function beginTransaction() : AbstractConnection
+    public function beginTransaction(): AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();
     }
 
-    public function commit() : AbstractConnection
+    public function commit(): AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->commit();
     }
 
-    public function rollback() : AbstractConnection
+    public function rollback(): AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->rollback();
     }
 
-    public function getSqlString(SqlInterface $statement) : string
+    public function getSqlString(SqlInterface $statement): string
     {
         $sql = new Sql($this->dbAdapter);
-        return $sql->getSqlStringForSqlObject($statement);
+        return $sql->buildSqlString($statement);
     }
 
     /**
      * @throw Exception
      */
-    protected function prepare($statement, $parameters) : StatementInterface
+    protected function prepare($statement, $parameters): StatementInterface
     {
         if ($statement instanceof SqlInterface) {
             $statement = $this->getSqlString($statement);
@@ -95,7 +95,7 @@ class Database
         array $parameters = [],
         ?ResultInterface $result = null,
         bool $disconnect = false
-    ) : Result {
+    ): Result {
         if (is_null($result)) {
             $dbResult = new Result();
         } else {
@@ -131,6 +131,7 @@ class Database
             $this->logger->debug($e->getMessage());
             $dbResult->addError($e->getMessage());
         } finally {
+            /** @var Resource $stmt */
             $stmt->getResource()->closeCursor();
         }
 
