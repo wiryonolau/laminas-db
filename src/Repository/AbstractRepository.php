@@ -83,7 +83,7 @@ abstract class AbstractRepository
     /**
      * @return $model
      */
-    public function insert(
+    public function upsert(
         AbstractModel $model,
         string $identifier = "id"
     ) {
