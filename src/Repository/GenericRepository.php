@@ -8,7 +8,7 @@ use Exception;
 use Itseasy\Database\Database;
 use Itseasy\Database\ResultInterface;
 
-class GenericRepository
+class GenericRepository implements RepositoryInterface
 {
     protected $db;
     protected $table;
