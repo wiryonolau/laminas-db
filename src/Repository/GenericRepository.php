@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Itseasy\Repository;
 
-use Itseasy\Database\Database;
 use Exception;
+use Itseasy\Database\Database;
 use Itseasy\Database\ResultInterface;
 
-abstract class AbstractRepository
+class GenericRepository
 {
     protected $db;
     protected $table;
