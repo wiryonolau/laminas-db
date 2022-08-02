@@ -84,7 +84,7 @@ class GenericRepository implements RepositoryInterface
      * @return $model
      */
     public function upsert(
-        AbstractModel $model,
+        object $model,
         string $identifier = "id"
     ) {
         $this->db->beginTransaction();
