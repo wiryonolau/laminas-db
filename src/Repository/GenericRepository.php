@@ -86,12 +86,21 @@ class GenericRepository implements RepositoryInterface
      */
     public function upsert(
         object $model,
-        string $identifier = "id"
+        string $identifier = "id",
+        array $exclude_attributes = []
     ) {
         $this->db->beginTransaction();
 
         try {
-            $attributes = $model->getArrayCopy();
+            $attributes = [];
+            foreach ($model->getArrayCopy() as $key => $value) {
+                if (in_array($key, $exclude_attributes)) {
+                    continue;
+                }
+                $attributes[$key] = $value;
+            }
+
+            // Always exclude identifier
             unset($attributes[$identifier]);
 
             if ($model->{$identifier}) {
@@ -100,6 +109,7 @@ class GenericRepository implements RepositoryInterface
                 $update->where([
                     $identifier => $model->{$identifier}
                 ]);
+
                 $updateResult = $this->db->execute($update);
                 if ($updateResult->isError()) {
                     throw new Exception(vsprintf("Unable to update %s row with %s = %s", [
@@ -121,7 +131,7 @@ class GenericRepository implements RepositoryInterface
             }
             $this->db->commit();
 
-            $select = $this->getRowByIdentifier($this->table, $id);
+            $select = $this->getRowByIdentifier($id, $identifier);
             return $select->getFirstRow($model);
         } catch (Exception $e) {
             $this->db->rollback();
