@@ -7,6 +7,7 @@ namespace Itseasy\Repository;
 use Exception;
 use Itseasy\Database\Database;
 use Itseasy\Database\ResultInterface;
+use Laminas\Db\Sql;
 
 class GenericRepository implements RepositoryInterface
 {
