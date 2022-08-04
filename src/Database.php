@@ -35,6 +35,12 @@ class Database
         return $this->dbAdapter;
     }
 
+    public function inTransaction(): bool
+    {
+        return $this->dbAdapter->getDriver()->getConnection()->inTransaction();
+    }
+
+
     public function beginTransaction(): AbstractConnection
     {
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();
