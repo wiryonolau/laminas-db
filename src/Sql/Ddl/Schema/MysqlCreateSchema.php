@@ -30,17 +30,17 @@ class MysqlCreateSchema extends AbstractSql implements SqlInterface
         $this->collate = (is_null($collate) ? "utf8mb4_unicode_ci" : $collate);
     }
 
-    protected function processSchema(PlatformInterface $adapterPlatform = null) : array
+    protected function processSchema(PlatformInterface $adapterPlatform = null): array
     {
         return [$this->name];
     }
 
-    protected function processCharset(PlatformInterface $adapterPlatform = null) : array
+    protected function processCharset(PlatformInterface $adapterPlatform = null): array
     {
         return [$this->charset];
     }
 
-    protected function processCollate(PlatformInterface $adapterPlatform = null) : array
+    protected function processCollate(PlatformInterface $adapterPlatform = null): array
     {
         return [$this->collate];
     }

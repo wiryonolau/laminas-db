@@ -8,7 +8,7 @@ use Laminas\Db\Metadata\MetadataInterface;
 
 class Factory extends LaminasSourceFactory
 {
-    public static function createSourceFromAdapter(Adapter $adapter) : MetadataInterface
+    public static function createSourceFromAdapter(Adapter $adapter): MetadataInterface
     {
         $platformName = $adapter->getPlatform()->getName();
 
@@ -16,7 +16,7 @@ class Factory extends LaminasSourceFactory
             case 'MySQL':
                 return new MysqlMetadata($adapter);
             default:
-                return SourceFactory::createSourceFromAdapter($adapter);
+                return parent::createSourceFromAdapter($adapter);
         }
     }
 }
