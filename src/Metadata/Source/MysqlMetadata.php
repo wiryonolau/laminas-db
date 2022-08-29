@@ -194,7 +194,7 @@ class MysqlMetadata extends LaminasMysqlMetadata
                 $erratas['permitted_values'] = $permittedValues;
             }
 
-            $erratas['extra'] = $row['EXTRA'];
+            $erratas['auto_increment'] = (strpos($row['EXTRA'], "auto_increment") === false ? false : true);
 
             $columns[$row['COLUMN_NAME']] = [
                 'ordinal_position'         => $row['ORDINAL_POSITION'],
