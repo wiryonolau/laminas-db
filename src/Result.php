@@ -25,7 +25,7 @@ class Result implements ItseasyResultInterface
         $objectPrototype = null,
         $resultSetObjectPrototype = null
     ) {
-        $this->resultSet = new HydratingResultSet();
+        $this->resultSet = new HydratingResultSet(new ResultSetHydrator());
 
         if (!is_null($resultSetObjectPrototype)) {
             $this->setResultSetObjectPrototype($resultSetObjectPrototype);
