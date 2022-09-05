@@ -103,7 +103,7 @@ class Database
         bool $disconnect = false
     ): Result {
         if (is_null($result)) {
-            $dbResult = new Result(new ResultSetHydrator(), null, null);
+            $dbResult = new Result(null, null, new ResultSetHydrator());
         } else {
             $dbResult = $result;
         }
