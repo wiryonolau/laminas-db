@@ -10,7 +10,6 @@ use Exception;
 use Itseasy\Database\HydratingResultSet;
 use Itseasy\Database\ResultInterface as ItseasyResultInterface;
 use Laminas\Db\Adapter\Driver\ResultInterface;
-use Laminas\Db\ResultSet\ResultSetInterface;
 use Laminas\Hydrator\HydratorInterface;
 use Traversable;
 
@@ -23,9 +22,17 @@ class Result implements ItseasyResultInterface
 
     public function __construct(
         $objectPrototype = null,
-        $resultSetObjectPrototype = null
+        $resultSetObjectPrototype = null,
+        ?HydratorInterface $resultSetHydrator = null
     ) {
-        $this->resultSet = new HydratingResultSet(new ResultSetHydrator());
+        if (!is_null($resultSetHydrator)) {
+            if (is_string($resultSetHydrator) and class_exists($resultSetHydrator)) {
+                $resultSetHydrator = new $resultSetHydrator;
+            }
+            $this->resultSet = new HydratingResultSet($resultSetHydrator);
+        } else {
+            $this->resultSet = new HydratingResultSet();
+        }
 
         if (!is_null($resultSetObjectPrototype)) {
             $this->setResultSetObjectPrototype($resultSetObjectPrototype);
