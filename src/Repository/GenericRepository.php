@@ -11,12 +11,8 @@ use Itseasy\Database\Sql\Filter\RegexSqlFilter;
 
 class GenericRepository extends AbstractRepository
 {
-    public function __construct(
-        Database $db,
-        string $table
-    ) {
-        parent::__construct($db, $table);
-
+    protected function defineSqlFilter(): void
+    {
         $this->setSqlFilter(new RegexSqlFilter([
             [
                 "id:(.*)", function ($id) {

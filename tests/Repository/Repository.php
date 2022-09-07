@@ -10,10 +10,8 @@ use Laminas\Db\Sql\Predicate\Predicate;
 
 class Repository extends AbstractRepository
 {
-    public function __construct(Database $db, string $table)
+    protected function defineSqlFilter(): void
     {
-        parent::__construct($db, $table);
-
         $this->setSqlFilter(new RegexSqlFilter([
             [
                 "id:(.*)", function ($id) {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Itseasy\Repository\Factory;
+namespace Itseasy\Repository;
 
 use Psr\Container\ContainerInterface;
 use Itseasy\Repository\GenericRepository;

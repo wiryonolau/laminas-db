@@ -24,12 +24,11 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     ) {
         $this->db = $db;
         $this->table = $table;
+
+        $this->defineSqlFilter();
     }
 
-    public function setTableName(string $table): void
-    {
-        $this->table = $table;
-    }
+    abstract protected function defineSqlFilter(): void;
 
     /**
      * @return ResultInterface | $objectPrototype
@@ -159,6 +158,18 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     {
         $delete = new Sql\Delete($this->table);
         $delete->where($where);
+        return $this->db->execute($delete);
+    }
+
+    public function filterAwareDelete(string $filters = null): ResultInterface
+    {
+        $delete = new Sql\Delete($this->table);
+        $delete = $this->applyFilter(
+            $delete,
+            $filters,
+            $this->getFilterCombination()
+        );
+
         return $this->db->execute($delete);
     }
 

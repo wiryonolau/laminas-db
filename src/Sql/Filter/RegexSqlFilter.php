@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Itseasy\Database\Sql\Filter;
 
+use Laminas\Db\Sql\Predicate\PredicateInterface;
 use Laminas\Db\Sql\Predicate\PredicateSet;
 use Laminas\Db\Sql\PreparableSqlInterface;
 
