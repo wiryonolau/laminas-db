@@ -23,7 +23,7 @@ final class DatabaseTest extends TestCase
         ]);
 
         $db = new Database($adapter, $logger);
-        $repository = new Repository\Repository($db);
+        $repository = new Repository\Repository($db, "test");
 
         $result = $repository->dropTable();
         $result = $repository->dropTrigger();
@@ -75,8 +75,12 @@ final class DatabaseTest extends TestCase
 
         $rows = $r->getRows(ArrayIterator::class, Model\TestModel::class);
         foreach ($rows as $r) {
-            $this->assertEquals($r instanceof  Model\TestModel, true);
+            $this->assertEquals($r instanceof Model\TestModel, true);
         }
+
+        $rows = $repository->getFitlerAwareRows("id:2", null, null, null, null, Model\TestModel::class);
+        $this->assertEquals($rows->count(), 1);
+        $this->assertEquals($rows->current()->id, 2);
     }
 
     public function testDdlDatabase()

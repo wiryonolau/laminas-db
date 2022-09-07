@@ -3,19 +3,25 @@
 namespace Itseasy\DatabaseTest\Repository;
 
 use Itseasy\Database\Database;
-use Itseasy\Database\Result;
-use Itseasy\DatabaseTest\Model\TestCollectionModel;
-use Itseasy\DatabaseTest\Model\TestModel;
+use Itseasy\Database\Sql\Filter\RegexSqlFilter;
+use Itseasy\Repository\AbstractRepository;
 use Laminas\Db\Sql;
-use PDO;
+use Laminas\Db\Sql\Predicate\Predicate;
 
-class Repository
+class Repository extends AbstractRepository
 {
-    protected $db;
-
-    public function __construct(Database $db)
+    public function __construct(Database $db, string $table)
     {
-        $this->db = $db;
+        parent::__construct($db, $table);
+
+        $this->setSqlFilter(new RegexSqlFilter([
+            [
+                "id:(.*)", function ($id) {
+                    $p = new Predicate();
+                    return $p->equalTo("id", $id);
+                }
+            ]
+        ]));
     }
 
     public function dropTable()
@@ -81,6 +87,8 @@ class Repository
     public function getData(?string $format = null, $result = null)
     {
         $parameters = [];
+
+        $select = new Sql\Select("test");
 
         switch ($format) {
             case "index_param":
