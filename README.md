@@ -89,12 +89,17 @@ filterAwareDelete(string $filters = null) : ResultInterface;
 
 ### SqlFilter
 
-A helper class to adding filter sql query base on definition , all callback must return **Laminas\Db\Sql\Predicate\PredicateInterface**
+A helper class to adding filter sql query base on definition
 
 #### RegexSqlFilter
 
-Using regex base sql fitler.
+Using regex base sql filter.
 Value inside round bracket ( **(...)** ) in regex will be pass to callback function as argument
+All callback must return **Laminas\Db\Sql\Predicate\PredicateInterface**
+
+All filter is running in orderly manner from top to bottom
+
+Example
 
 ```php
 use Itseasy\Repository\AbstractRepository;
@@ -107,9 +112,34 @@ class Repository extends AbstractRepository
     {
         $this->setSqlFilter(new RegexSqlFilter([
             [
+                "is:active", function ($status) {
+                    $p = new Predicate();
+                    return $p->equalTo("active", true);
+                }
+            ],      
+            [
                 "id:(\d)", function ($id) {
                     $p = new Predicate();
                     return $p->equalTo("id", $id);
+                }
+            ],      
+            [
+                "tech_creation_date:(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})", function($start_date, $end_date) {
+                    return new Laminas\Db\Sql\Predicate\Between(
+                        "tech_creation_date",
+                        $start_date,
+                        $end_date
+                    );
+                }
+            ],
+            [
+                "([a-z0-9]+)", function($value) {
+                    $value = str_replace(" ", "%", $value);
+                	return new Laminas\Db\Sql\PredicateSet([
+ 	        	    	new Lamainas|Db\Sql\Predicate\Like("first_name", "%$value%"),
+ 			            new Lamainas|Db\Sql\Predicate\Like("last_name", "%$value%"),
+ 			            new Lamainas|Db\Sql\Predicate\Like("email", "%$value%"),
+ 			        ], Laminas\Db\Sql\Predicate\PredicateSet::COMBINED_BY_AND );
                 }
             ]
         ]));
@@ -119,6 +149,9 @@ class Repository extends AbstractRepository
 # Usage
 $repository = new Repository($db, "mytable");
 $repository->getFilterAwareRows("id:12", "id DESC", 0, 10);
+$repository->getFilterAwareRows("tech_creation_date:2022-01-01:2022-03-01", null, 0, 10);
+$repository->getFilterAwareRows("is:active somebody");
+
 ```
 
 

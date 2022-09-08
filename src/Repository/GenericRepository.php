@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Itseasy\Repository;
 
-use Itseasy\Database\Database;
 use Itseasy\Database\Sql\Filter\RegexSqlFilter;
 
 /* For AbstractFactory */
