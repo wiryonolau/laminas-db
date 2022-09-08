@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Itseasy\Database\Sql\Filter;
 
-use Laminas\Db\Sql\PreparableSqlInterface;
 use Laminas\Db\Sql\Predicate\PredicateSet;
+use Laminas\Db\Sql\SqlInterface;
 
 trait SqlFilterAwareTrait
 {
@@ -39,16 +39,16 @@ trait SqlFilterAwareTrait
     }
 
     public function applyFilter(
-        PreparableSqlInterface $sql,
+        SqlInterface $sql,
         ?string $filters = null,
         string $combination = PredicateSet::OP_AND
-    ): PreparableSqlInterface {
+    ): SqlInterface {
         if (is_null($this->_sqlFilter)) {
             return $sql;
         }
 
         if (!is_null($filters)) {
-            foreach (explode($this->_filterValueSeparator, $filters) as $filter) {
+            foreach (explode($this->_filterValueSeparator, trim($filters)) as $filter) {
                 $sql = $this->getSqlFilter()->applyFilter(
                     $sql,
                     urldecode(trim($filter)),

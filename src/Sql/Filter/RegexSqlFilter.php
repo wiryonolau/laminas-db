@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Itseasy\Database\Sql\Filter;
 
-use Laminas\Db\Sql\Predicate\PredicateInterface;
 use Laminas\Db\Sql\Predicate\PredicateSet;
-use Laminas\Db\Sql\PreparableSqlInterface;
+use Laminas\Db\Sql\SqlInterface;
 
 /**
  * Example Rule
@@ -83,13 +82,15 @@ class RegexSqlFilter implements SqlFilterInterface
     }
 
     public function applyFilter(
-        PreparableSqlInterface $sql,
+        SqlInterface $sql,
         string $value,
         string $combination = PredicateSet::OP_AND
-    ): PreparableSqlInterface {
+    ): SqlInterface {
         foreach ($this->rules as $rule) {
             $regex = sprintf("/^%s$/", $rule->regex);
-            if (preg_match($regex, $value, $matches) === false) {
+            preg_match($regex, $value, $matches);
+
+            if (empty($matches)) {
                 continue;
             }
 

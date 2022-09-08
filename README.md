@@ -80,7 +80,7 @@ getFilterAwareRows(
 # Filter will be converted to sql by predefined filter
 getFilterAwareRowCount(
     string $filters = null
-) : ResultInterface;
+) : int;
 
 # Delete Record base on filter given
 # Filter will be converted to sql by predefined filter
