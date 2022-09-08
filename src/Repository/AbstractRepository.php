@@ -10,6 +10,7 @@ use Itseasy\Database\Sql\Filter\SqlFilterAwareInterface;
 use Itseasy\Database\ResultInterface;
 use Itseasy\Database\Sql\Filter\SqlFilterAwareTrait;
 use Laminas\Db\Sql;
+use Laminas\Db\Sql\Predicate\Expression;
 
 abstract class AbstractRepository implements SqlFilterAwareInterface
 {
@@ -92,7 +93,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     ): int {
         try {
             $select = new Sql\Select($this->table);
-            $select->columns(["num" => "COUNT(*)"]);
+            $select->columns(["num" => new Expression("COUNT(*)")]);
             $select->where($where);
 
             $result = $this->db->execute($select);
@@ -144,7 +145,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     ): int {
         try {
             $select = new Sql\Select($this->table);
-            $select->columns(["num" => "COUNT(*)"]);
+            $select->columns(["num" => new Expression("COUNT(*)")]);
             $select = $this->applyFilter($select, $filters, $this->getFilterCombination());
             $result = $this->db->execute($select);
 
