@@ -4,10 +4,10 @@ Library wrapper for Laminas DB
 
 ### RepositoryAbstractServiceFactory
 
-Lazy repository Initiation for Laminas ServiceManager. 
+Lazy repository Initiation for Laminas ServiceManager.
 Any service request end with Repository will be created automatically.
 
-To use it  put in the service_factory in service config
+To use it put in the service_factory in service config
 
 ```php
 return [
@@ -25,7 +25,7 @@ A Generic Repository class that will be call by RepositoryAbstractServiceFactory
 
 ### AbstractRepository
 
-Abstract Repository class. 
+Abstract Repository class.
 
 Any **FilterAware** function require **table** and **sqlFilter** define on construct
 
@@ -34,8 +34,8 @@ Available function
 ```php
 # Get Record by identifer
 getRowByIdentifier(
-    $value, 
-    string $identifier = "id", 
+    $value,
+    string $identifier = "id",
     $objectPrototype
 ) : ResultInterface | $objectPrototype;
 
@@ -51,7 +51,7 @@ getRows(
 
 # Get Row Count by array of condition
 getRowCount(
-	array $where = []
+    array $where = []
 ): int;
 
 # Delete Record base on condition
@@ -67,7 +67,7 @@ public function upsert(
 
 # Get Multiple Record base on filter given
 # Filter will be converted to sql by predefined filter
-getFitlerAwareRows(
+getFilterAwareRows(
     string $filters = null,
     ?string $orders = null,
     ?int $offset = null,
@@ -81,7 +81,7 @@ getFitlerAwareRows(
 getFilterAwareRowCount(
     string $filters = null
 ) : ResultInterface;
- 
+
 # Delete Record base on filter given
 # Filter will be converted to sql by predefined filter
 filterAwareDelete(string $filters = null) : ResultInterface;
@@ -105,10 +105,10 @@ Example
 use Itseasy\Repository\AbstractRepository;
 use Itseasy\Database\Sql\Filter\RegexSqlFilter;
 
-class Repository extends AbstractRepository 
+class Repository extends AbstractRepository
 {
     # Can be public / protected function
-    protected function defineSqlFilter() : void 
+    protected function defineSqlFilter() : void
     {
         $this->setSqlFilter(new RegexSqlFilter([
             [
@@ -116,13 +116,13 @@ class Repository extends AbstractRepository
                     $p = new Predicate();
                     return $p->equalTo("active", true);
                 }
-            ],      
+            ],
             [
                 "id:(\d)", function ($id) {
                     $p = new Predicate();
                     return $p->equalTo("id", $id);
                 }
-            ],      
+            ],
             [
                 "tech_creation_date:(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})", function($start_date, $end_date) {
                     return new Laminas\Db\Sql\Predicate\Between(
@@ -136,10 +136,10 @@ class Repository extends AbstractRepository
                 "([a-z0-9]+)", function($value) {
                     $value = str_replace(" ", "%", $value);
                 	return new Laminas\Db\Sql\PredicateSet([
- 	        	    	new Lamainas|Db\Sql\Predicate\Like("first_name", "%$value%"),
- 			            new Lamainas|Db\Sql\Predicate\Like("last_name", "%$value%"),
+ 	                    new Lamainas|Db\Sql\Predicate\Like("first_name", "%$value%"),
+                        new Lamainas|Db\Sql\Predicate\Like("last_name", "%$value%"),
  			            new Lamainas|Db\Sql\Predicate\Like("email", "%$value%"),
- 			        ], Laminas\Db\Sql\Predicate\PredicateSet::COMBINED_BY_AND );
+                    ], Laminas\Db\Sql\Predicate\PredicateSet::COMBINED_BY_AND );
                 }
             ]
         ]));
@@ -153,6 +153,3 @@ $repository->getFilterAwareRows("tech_creation_date:2022-01-01:2022-03-01", null
 $repository->getFilterAwareRows("is:active somebody");
 
 ```
-
-
-

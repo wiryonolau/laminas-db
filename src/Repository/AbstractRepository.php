@@ -106,7 +106,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     /**
      * @return ResultInterface | $resultSetObjectPrototype | ArrayIterator
      */
-    public function getFitlerAwareRows(
+    public function getFilterAwareRows(
         string $filters = null,
         ?string $orders = null,
         ?int $offset = null,

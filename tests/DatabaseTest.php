@@ -78,7 +78,7 @@ final class DatabaseTest extends TestCase
             $this->assertEquals($r instanceof Model\TestModel, true);
         }
 
-        $rows = $repository->getFitlerAwareRows("id:2", null, null, null, null, Model\TestModel::class);
+        $rows = $repository->getFilterAwareRows("id:2", null, null, null, null, Model\TestModel::class);
         $this->assertEquals($rows->count(), 1);
         $this->assertEquals($rows->current()->id, 2);
     }
