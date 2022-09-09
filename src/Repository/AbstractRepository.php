@@ -108,7 +108,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
      * @return ResultInterface | $resultSetObjectPrototype | ArrayIterator
      */
     public function getFilterAwareRows(
-        string $filters = null,
+        string $filters = "",
         ?string $orders = null,
         ?int $offset = null,
         ?int $limit = null,
@@ -141,7 +141,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     }
 
     public function getFilterAwareRowCount(
-        string $filters = null
+        string $filters = ""
     ): int {
         try {
             $select = new Sql\Select($this->table);
@@ -162,7 +162,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
         return $this->db->execute($delete);
     }
 
-    public function filterAwareDelete(string $filters = null): ResultInterface
+    public function filterAwareDelete(string $filters = ""): ResultInterface
     {
         $delete = new Sql\Delete($this->table);
         $delete = $this->applyFilter(

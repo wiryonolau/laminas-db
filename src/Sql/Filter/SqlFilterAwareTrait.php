@@ -40,7 +40,7 @@ trait SqlFilterAwareTrait
 
     public function applyFilter(
         SqlInterface $sql,
-        ?string $filters = null,
+        string $filters = "",
         string $combination = PredicateSet::OP_AND
     ): SqlInterface {
         if (is_null($this->_sqlFilter)) {
