@@ -67,7 +67,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
         $select = new Sql\Select($this->table);
         $select->where($where);
 
-        if (!is_null($orders)) {
+        if (is_string($orders) and !empty(trim($orders))) {
             $select->order($orders);
         }
 
@@ -119,7 +119,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
 
         $select = $this->applyFilter($select, $filters, $this->getFilterCombination());
 
-        if (!is_null($orders)) {
+        if (is_string($orders) and !empty(trim($orders))) {
             $select->order($orders);
         }
 

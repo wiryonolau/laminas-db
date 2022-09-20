@@ -19,7 +19,8 @@
         "php": "^7.4",
         "laminas/laminas-db": "^2.13",
         "laminas/laminas-hydrator": "^4.3",
-        "laminas/laminas-log": "^2.15"
+        "laminas/laminas-log": "^2.15",
+        "itseasy/util": "^1.0"
     },
     "autoload": {
         "psr-4": {
@@ -33,7 +34,6 @@
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.4",
-        "itseasy/slim-app": "dev-main"
+        "phpunit/phpunit": "^9.4"
     }
 }
