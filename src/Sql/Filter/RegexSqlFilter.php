@@ -99,6 +99,8 @@ class RegexSqlFilter implements SqlFilterInterface
                 call_user_func_array($rule->callback, $matches),
                 $combination
             );
+
+            break;
         }
         return $sql;
     }
