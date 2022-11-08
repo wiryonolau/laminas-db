@@ -131,7 +131,16 @@ class Result implements ItseasyResultInterface
     public function getSingleValue()
     {
         try {
-            return current($this->getFirstRow());
+            $row = $this->getFirstRow();
+            if (method_exists($row, "getArrayCopy")) {
+                return current($row->getArrayCopy());
+            }
+            
+            if (is_array($row)) {
+                return $row[0];
+            }
+
+            throw new Exception("Cannot retrieve Single Value");
         } catch (Exception $e) {
             return null;
         }
