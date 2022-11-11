@@ -20,6 +20,11 @@ class Database
 {
     use LoggerAwareTrait;
 
+    const ISOLATION_SERIALIZABLE = "SERIALIZABLE";
+    const ISOLATION_REPEATABLE_READ = "REPEATABLE READ";
+    const ISOLATION_READ_COMMITTED = "READ UNCOMMITED";
+    const ISOLATION_READ_UNCOMMITTED = "READ UNCOMMITED";
+
     protected $dbAdapter;
 
     public function __construct(
@@ -40,9 +45,37 @@ class Database
         return $this->dbAdapter->getDriver()->getConnection()->inTransaction();
     }
 
+    /*
+     * Only support common isolation level
+     * For oci8 or ibmdb2 use db config level to set this or call manually
+     * For some engine in mysql / mariadb doesn't have transaction feature
+     * 
+     * This set isolation level for next transaction only
+     * 
+     * @throw Exception
+     */
+    public function beginTransaction(
+        string $isolation_level = self::ISOLATION_SERIALIZABLE
+    ): AbstractConnection {
+        if (!in_array($isolation_level, [
+            self::ISOLATION_SERIALIZABLE,
+            self::ISOLATION_READ_COMMITTED,
+            self::ISOLATION_READ_UNCOMMITTED,
+            self::ISOLATION_REPEATABLE_READ
+        ])) {
+            throw new Exception("Invalid isolation level given");
+        };
 
-    public function beginTransaction(): AbstractConnection
-    {
+        switch ($this->dbAdapter->getDriver()->getConnection()->getDriverName()) {
+            case "mssql":
+            case "mysql":
+                $this->execute(sprintf("SET TRANSACTION ISOLATION LEVEL %s", $isolation_level));
+                break;
+            case "pgsql":
+                $this->execute(sprintf("SET TRANSACTION %s", $isolation_level));
+                break;
+            default:
+        }
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();
     }
 
