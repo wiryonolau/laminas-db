@@ -15,6 +15,8 @@ class Factory extends LaminasSourceFactory
         switch ($platformName) {
             case 'MySQL':
                 return new MysqlMetadata($adapter);
+            case 'PostgreSQL':
+                return new PostgresqlMetadata($adapter);
             default:
                 return parent::createSourceFromAdapter($adapter);
         }
