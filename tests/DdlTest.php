@@ -4,7 +4,10 @@ namespace Itseasy\DatabaseTest;
 
 use Itseasy\Database\Database;
 use Itseasy\Database\Metadata\Source\Factory;
+use Itseasy\Database\Sql\Ddl\TableDiff;
 use Laminas\Db\Adapter\Adapter;
+use Laminas\Db\Metadata\Object\AbstractTableObject;
+use Laminas\Db\Sql\Sql;
 use Laminas\Log\Logger;
 use PHPUnit\Framework\TestCase;
 
@@ -12,10 +15,8 @@ final class DdlTest extends TestCase
 {
     protected $logger;
 
-    public function __construct(?string $name = null, array $data = [], $dataName = '')
+    public function setUp(): void
     {
-        parent::__construct($name, $data, $dataName);
-
         $this->logger = new Logger();
         $this->logger->addWriter('stream', null, ['stream' => 'php://stderr']);
     }
@@ -41,6 +42,11 @@ final class DdlTest extends TestCase
 
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
 
+        $tables = $meta->getTables();
+        foreach ($tables as $table) {
+            $this->testDiff($db, $table);
+        }
+
         $this->checkTable($meta);
     }
 
@@ -64,6 +70,11 @@ final class DdlTest extends TestCase
         $db = new Database($adapter, $this->logger);
 
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
+
+        $tables = $meta->getTables();
+        foreach ($tables as $table) {
+            $this->testDiff($db, $table);
+        }
 
         $this->checkTable($meta);
     }
@@ -89,6 +100,11 @@ final class DdlTest extends TestCase
 
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
 
+        $tables = $meta->getTables();
+        foreach ($tables as $table) {
+            $this->testDiff($db, $table);
+        }
+
         $this->checkTable($meta);
     }
 
@@ -107,7 +123,23 @@ final class DdlTest extends TestCase
 
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
 
+        $tables = $meta->getTables();
+        foreach ($tables as $table) {
+            $this->testDiff($db, $table);
+        }
+
         $this->checkTable($meta);
+    }
+
+    private function testDiff(Database $db, AbstractTableObject $table)
+    {
+        $diff = new TableDiff($db->getAdapter());
+        $ddls = $diff->diff($table);
+
+        $sql = new Sql($db->getAdapter());
+        foreach ($ddls as $ddl) {
+            debug($sql->buildSqlString($ddl));
+        }
     }
 
     private function checkTable($meta)
@@ -118,8 +150,4 @@ final class DdlTest extends TestCase
             $this->assertEquals(count($table->getColumns()) > 0, true);
         }
     }
-
-    // public function testSqlite()
-    // {
-    // }
 }

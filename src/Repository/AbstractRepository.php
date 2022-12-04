@@ -9,6 +9,7 @@ use Itseasy\Database\Database;
 use Itseasy\Database\Sql\Filter\SqlFilterAwareInterface;
 use Itseasy\Database\ResultInterface;
 use Itseasy\Database\Sql\Filter\SqlFilterAwareTrait;
+use Laminas\Db\Adapter\Driver\AbstractConnection;
 use Laminas\Db\Sql;
 use Laminas\Db\Sql\Predicate\Expression;
 
@@ -230,5 +231,26 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
             $this->db->rollback();
             return new $model();
         }
+    }
+
+    public function inTransaction(): bool
+    {
+        return $this->db->inTransaction();
+    }
+
+    public function beginTransaction(
+        string $isolation_level = Database::ISOLATION_SERIALIZABLE
+    ): AbstractConnection {
+        return $this->db->beginTransaction($isolation_level);
+    }
+
+    public function rollback(): AbstractConnection
+    {
+        return $this->db->rollback();
+    }
+
+    public function commit(): AbstractConnection
+    {
+        return $this->db->commit();
     }
 }
