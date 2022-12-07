@@ -2,7 +2,7 @@
 
 namespace Itseasy\DatabaseTest\Repository;
 
-use Itseasy\Database\Database;
+use Exception;
 use Itseasy\Database\Sql\Filter\RegexSqlFilter;
 use Itseasy\Repository\AbstractRepository;
 use Laminas\Db\Sql;
@@ -75,11 +75,19 @@ class Repository extends AbstractRepository
 
     public function populateTable($name)
     {
-        $insert = new Sql\Insert("test");
-        $insert->columns(["name"]);
-        $insert->values([$name]);
+        $this->db->beginTransaction();
+        try {
+            $this->db->beginTransaction();
+            $insert = new Sql\Insert("test");
+            $insert->columns(["name"]);
+            $insert->values([$name]);
 
-        return $this->db->execute($insert);
+            $insert = $this->db->execute($insert);
+            $this->db->commit(true);
+            return $insert;
+        } catch (Exception $e) {
+            $this->db->rollback(true);
+        }
     }
 
     public function getData(?string $format = null, $result = null)
