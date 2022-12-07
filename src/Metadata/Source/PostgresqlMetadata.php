@@ -3,11 +3,9 @@
 namespace Itseasy\Database\Metadata\Source;
 
 use Exception;
-use Itseasy\Database\Metadata\Object\MysqlTableObject;
+use Itseasy\Database\Metadata\Object\RoutineObject;
 use Itseasy\Database\Metadata\Object\SequenceObject;
 use Laminas\Db\Adapter\Adapter;
-use Laminas\Db\Metadata\Object\ViewObject;
-use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Source\PostgresqlMetadata as SourcePostgresqlMetadata;
 
 class PostgresqlMetadata extends SourcePostgresqlMetadata
@@ -136,6 +134,112 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
         $this->data['columns'][$schema][$table] = $columns;
     }
 
+    public function getRoutineNames($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadRoutinesData($schema);
+
+        return array_keys($this->data['routines'][$schema]);
+    }
+
+    public function getRoutines($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $sequences = [];
+        foreach ($this->getRoutineNames($schema) as $sequenceName) {
+            $sequences[] = $this->getRoutine($sequenceName, $schema);
+        }
+        return $sequences;
+    }
+
+    public function getRoutine($routineName, $schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadRoutinesData($schema);
+
+        if (!isset($this->data['routines'][$schema][$routineName])) {
+            throw new Exception('Routine "' . $routineName . '" does not exist');
+        }
+
+        $info = $this->data['routines'][$schema][$routineName];
+
+        $routine = new RoutineObject();
+
+        $routine->setName($routineName);
+        $routine->setType($info["routine_type"]);
+        $routine->setDataType($info["data_type"]);
+        $routine->setBody($info['routine_body']);
+        $routine->setDefinition($info['routine_definition']);
+        $routine->setExternalName($info['external_name']);
+        $routine->setExternalLanguage($info['external_language']);
+
+        return $routine;
+    }
+
+    protected function loadRoutinesData($schema)
+    {
+        if (isset($this->data['routines'][$schema])) {
+            return;
+        }
+
+        $this->prepareDataHierarchy('routines', $schema);
+
+        $p = $this->adapter->getPlatform();
+
+        $isColumns = [
+            'routine_name',
+            'routine_type',
+            'routine_body',
+            'routine_definition',
+            'data_type',
+            'external_name',
+            'external_language'
+        ];
+
+        array_walk($isColumns, function (&$c) use ($p) {
+            if (is_array($c)) {
+                $alias = key($c);
+                $c     = $p->quoteIdentifierChain($c);
+                if (is_string($alias)) {
+                    $c .= ' ' . $p->quoteIdentifier($alias);
+                }
+            } else {
+                $c = $p->quoteIdentifier($c);
+            }
+        });
+
+        $sql = 'SELECT ' . implode(', ', $isColumns)
+            . ' FROM ' . $p->quoteIdentifierChain(['information_schema', 'routines'])
+            . ' WHERE ';
+
+        if ($schema !== self::DEFAULT_SCHEMA) {
+            $sql .= $p->quoteIdentifier('routine_schema')
+                . ' = ' . $p->quoteTrustedValue($schema);
+        } else {
+            $sql .= $p->quoteIdentifier('routine_schema')
+                . ' != \'information_schema\'';
+        }
+
+        $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
+
+        $data = [];
+        foreach ($results->toArray() as $row) {
+            $row                             = array_change_key_case($row, CASE_LOWER);
+            $data[$row['routine_name']] = $row;
+        }
+
+        $this->data['routines'][$schema] = $data;
+    }
+
     protected function loadSequenceData($schema)
     {
         if (isset($this->data['sequences'][$schema])) {
@@ -192,5 +296,79 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
         }
 
         $this->data['sequences'][$schema] = $data;
+    }
+
+    protected function loadTriggerData($schema)
+    {
+        if (isset($this->data['triggers'][$schema])) {
+            return;
+        }
+
+        // $version = $this->adapter->query("SHOW server_version_num", Adapter::QUERY_MODE_EXECUTE);
+        // $version = $version->toArray()[0]["server_version_num"];
+
+        // if ($version < 100000) {
+        //     parent::loadTriggerData($schema);
+        //     return;
+        // }
+
+        $this->prepareDataHierarchy('triggers', $schema);
+
+        $p = $this->adapter->getPlatform();
+
+        $isColumns = [
+            'trigger_name',
+            'event_manipulation',
+            'event_object_catalog',
+            'event_object_schema',
+            'event_object_table',
+            'action_order',
+            'action_condition',
+            'action_statement',
+            'action_orientation',
+            'action_timing',
+            'action_reference_old_table',
+            'action_reference_new_table',
+            'created',
+        ];
+
+        array_walk($isColumns, function (&$c) use ($p) {
+            if (is_array($c)) {
+                $alias = key($c);
+                $c     = $p->quoteIdentifierChain($c);
+                if (is_string($alias)) {
+                    $c .= ' ' . $p->quoteIdentifier($alias);
+                }
+            } else {
+                $c = $p->quoteIdentifier($c);
+            }
+        });
+
+        $sql = 'SELECT ' . implode(', ', $isColumns)
+            . ' FROM ' . $p->quoteIdentifierChain(['information_schema', 'triggers'])
+            . ' WHERE ';
+
+        if ($schema !== self::DEFAULT_SCHEMA) {
+            $sql .= $p->quoteIdentifier('trigger_schema')
+                . ' = ' . $p->quoteTrustedValue($schema);
+        } else {
+            $sql .= $p->quoteIdentifier('trigger_schema')
+                . ' != \'information_schema\'';
+        }
+
+        $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
+
+        $data = [];
+        foreach ($results->toArray() as $row) {
+            $row                             = array_change_key_case($row, CASE_LOWER);
+            $row['action_reference_old_row'] = 'OLD';
+            $row['action_reference_new_row'] = 'NEW';
+            if (null !== $row['created']) {
+                $row['created'] = new DateTime($row['created']);
+            }
+            $data[$row['trigger_name']] = $row;
+        }
+
+        $this->data['triggers'][$schema] = $data;
     }
 }

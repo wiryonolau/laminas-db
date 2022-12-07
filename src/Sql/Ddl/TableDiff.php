@@ -20,20 +20,38 @@ use Laminas\Db\Sql\Ddl\Constraint\UniqueKey;
 class TableDiff
 {
     protected $metadata;
-    protected $tables;
 
-    public function __construct(AdapterInterface $adapter)
-    {
+    // array of table name
+    protected $existingTableNames;
+
+    public function __construct(
+        AdapterInterface $adapter,
+        ?array $existingTableNames = []
+    ) {
         $this->metadata = Factory::createSourceFromAdapter($adapter);
-        $this->tables = $this->metadata->getTableNames();
+
+        if (empty($existingTableNames)) {
+            $this->existingTableNames = $this->metadata->getTableNames();
+        } else {
+            $this->existingTableNames = $existingTableNames;
+        }
     }
 
-    public function diff(AbstractTableObject $table)
-    {
+    /**
+     * Check if difference exist in given table against existing table
+     * 
+     * @return Ddl\SqlInterface[] | Ddl\SqlInterface
+     */
+    public function diff(
+        AbstractTableObject $table,
+        ?AbstractTableObject $existingTable = null
+    ): array {
         $ddls = [];
 
-        $existingTable = null;
-        if (in_array($table->getName(), $this->tables)) {
+        if (
+            is_null($existingTable)
+            and in_array($table->getName(), $this->existingTableNames)
+        ) {
             $existingTable = $this->metadata->getTable($table->getName());
         }
 
