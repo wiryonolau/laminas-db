@@ -27,6 +27,9 @@ class Database
 
     protected $dbAdapter;
 
+    // Nested transaction level
+    protected $transactionLevel = 0;
+
     public function __construct(
         AdapterInterface $dbAdapter,
         LoggerInterface $logger
@@ -45,17 +48,29 @@ class Database
         return $this->dbAdapter->getDriver()->getConnection()->inTransaction();
     }
 
-    /*
+    public function getTransactionLevel(): int
+    {
+        return $this->transactionLevel;
+    }
+
+    /**
      * Only support common isolation level
      * For oci8 or ibmdb2 use db config level to set this or call manually
      * For some engine in mysql / mariadb doesn't have transaction feature
      * 
      * This set isolation level for next transaction only
      * 
+     * if ignore_nested_transaction is true
+     *  beginTransaction will not run if already inside transaction
+     * 
+     * @param isolation_level string
+     * @param ignore_nested_transaction bool 
+     * 
      * @throw Exception
      */
     public function beginTransaction(
-        string $isolation_level = self::ISOLATION_SERIALIZABLE
+        string $isolation_level = self::ISOLATION_SERIALIZABLE,
+        bool $ignore_nested_transaction = true
     ): AbstractConnection {
         if (!in_array($isolation_level, [
             self::ISOLATION_SERIALIZABLE,
@@ -66,27 +81,73 @@ class Database
             throw new Exception("Invalid isolation level given");
         };
 
-        switch ($this->dbAdapter->getDriver()->getConnection()->getDriverName()) {
-            case "mssql":
-            case "mysql":
-                $this->execute(sprintf("SET TRANSACTION ISOLATION LEVEL %s", $isolation_level));
-                break;
-            case "pgsql":
-                $this->execute(sprintf("SET TRANSACTION %s", $isolation_level));
-                break;
-            default:
+        if ($this->inTransaction()) {
+            if ($ignore_nested_transaction) {
+                return $this->dbAdapter->getDriver()->getConnection();
+            } else {
+                $this->transactionLevel++;
+            }
+        } else {
+            // Can only be set on first level transaction
+            switch ($this->dbAdapter->getDriver()->getConnection()->getDriverName()) {
+                case "mysql":
+                case "mssql":
+                case "pgsql":
+                    $this->execute(sprintf("SET TRANSACTION ISOLATION LEVEL %s", $isolation_level));
+                    break;
+                default:
+            }
         }
+
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();
     }
 
-    public function commit(): AbstractConnection
+    /**
+     * Commit transaction
+     * Default ignore commit if nested
+     */
+    public function commit(bool $ignore_nested_transaction = true): AbstractConnection
     {
-        return $this->dbAdapter->getDriver()->getConnection()->commit();
+        if (
+            $this->inTransaction()
+            and $this->getTransactionLevel() > 0
+            and $ignore_nested_transaction
+        ) {
+            return $this->dbAdapter->getDriver()->getConnection();
+        }
+
+        // This will throw if error
+        $connection = $this->dbAdapter->getDriver()->getConnection()->commit();
+
+        if ($this->transactionLevel > 0) {
+            $this->transactionLevel--;
+        }
+
+        return $connection;
     }
 
-    public function rollback(): AbstractConnection
+    /**
+     * Rollback transaction
+     * Default ignore rollback if nested
+     */
+    public function rollback(bool $ignore_nested_transaction = true): AbstractConnection
     {
-        return $this->dbAdapter->getDriver()->getConnection()->rollback();
+        if (
+            $this->inTransaction()
+            and $this->getTransactionLevel() > 0
+            and $ignore_nested_transaction
+        ) {
+            return $this->dbAdapter->getDriver()->getConnection();
+        }
+
+        // This will throw if error
+        $connection = $this->dbAdapter->getDriver()->getConnection()->rollback();
+
+        if ($this->transactionLevel > 0) {
+            $this->transactionLevel--;
+        }
+
+        return $connection;
     }
 
     public function getSqlString(SqlInterface $statement): string

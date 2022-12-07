@@ -135,7 +135,7 @@ class Result implements ItseasyResultInterface
             if (method_exists($row, "getArrayCopy")) {
                 return current($row->getArrayCopy());
             }
-            
+
             if (is_array($row)) {
                 return $row[0];
             }
