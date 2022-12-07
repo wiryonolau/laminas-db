@@ -27,8 +27,9 @@ class Database
 
     protected $dbAdapter;
 
-    // Nested transaction level
-    protected $transactionLevel = 0;
+    // For recording begin transaction call only 
+    // Database does not support nested transaction
+    protected $transactionCounter = 0;
 
     public function __construct(
         AdapterInterface $dbAdapter,
@@ -48,9 +49,9 @@ class Database
         return $this->dbAdapter->getDriver()->getConnection()->inTransaction();
     }
 
-    public function getTransactionLevel(): int
+    public function getTransactionCounter(): int
     {
-        return $this->transactionLevel;
+        return $this->transactionCounter;
     }
 
     /**
@@ -60,17 +61,13 @@ class Database
      * 
      * This set isolation level for next transaction only
      * 
-     * if ignore_nested_transaction is true
-     *  beginTransaction will not run if already inside transaction
-     * 
-     * @param isolation_level string
-     * @param ignore_nested_transaction bool 
+     * beginTransaction will not run if already inside transaction
+     * beginTransaction will add counter if already inside transaction
      * 
      * @throw Exception
      */
     public function beginTransaction(
-        string $isolation_level = self::ISOLATION_SERIALIZABLE,
-        bool $ignore_nested_transaction = true
+        string $isolation_level = self::ISOLATION_SERIALIZABLE
     ): AbstractConnection {
         if (!in_array($isolation_level, [
             self::ISOLATION_SERIALIZABLE,
@@ -81,22 +78,24 @@ class Database
             throw new Exception("Invalid isolation level given");
         };
 
+        // Mark as n call
         if ($this->inTransaction()) {
-            if ($ignore_nested_transaction) {
-                return $this->dbAdapter->getDriver()->getConnection();
-            } else {
-                $this->transactionLevel++;
-            }
-        } else {
-            // Can only be set on first level transaction
-            switch ($this->dbAdapter->getDriver()->getConnection()->getDriverName()) {
-                case "mysql":
-                case "mssql":
-                case "pgsql":
-                    $this->execute(sprintf("SET TRANSACTION ISOLATION LEVEL %s", $isolation_level));
-                    break;
-                default:
-            }
+            $this->logger->debug("Begin transaction called inside transaction, use force_commit or force_callback to reset");
+            $this->transactionCounter++;
+            return $this->dbAdapter->getDriver()->getConnection();
+        }
+
+        // Reset level
+        $this->transactionCounter = 0;
+
+        // Can only be set on first level transaction
+        switch ($this->dbAdapter->getDriver()->getConnection()->getDriverName()) {
+            case "mysql":
+            case "mssql":
+            case "pgsql":
+                $this->execute(sprintf("SET TRANSACTION ISOLATION LEVEL %s", $isolation_level));
+                break;
+            default:
         }
 
         return $this->dbAdapter->getDriver()->getConnection()->beginTransaction();
@@ -104,48 +103,63 @@ class Database
 
     /**
      * Commit transaction
-     * Default ignore commit if nested
      */
-    public function commit(bool $ignore_nested_transaction = true): AbstractConnection
+    public function commit(bool $force_commit = false): AbstractConnection
     {
         if (
             $this->inTransaction()
-            and $this->getTransactionLevel() > 0
-            and $ignore_nested_transaction
+            and $this->getTransactionCounter() > 0
+            and $force_commit === false
         ) {
+            $this->logger->debug(
+                sprintf(
+                    "begin transaction called %d times, skipping commit",
+                    $this->transactionCounter + 1
+                )
+            );
+            if ($this->transactionCounter > 0) {
+                $this->transactionCounter--;
+            }
+
             return $this->dbAdapter->getDriver()->getConnection();
         }
 
-        // This will throw if error
         $connection = $this->dbAdapter->getDriver()->getConnection()->commit();
 
-        if ($this->transactionLevel > 0) {
-            $this->transactionLevel--;
-        }
+        // Reset level
+        $this->transactionCounter = 0;
 
         return $connection;
     }
 
     /**
      * Rollback transaction
-     * Default ignore rollback if nested
      */
-    public function rollback(bool $ignore_nested_transaction = true): AbstractConnection
+    public function rollback(bool $force_rollback = false): AbstractConnection
     {
         if (
             $this->inTransaction()
-            and $this->getTransactionLevel() > 0
-            and $ignore_nested_transaction
+            and $this->getTransactionCounter() > 0
+            and $force_rollback === false
         ) {
+            $this->logger->debug(
+                sprintf(
+                    "begin transaction called %d times, skipping rollback",
+                    $this->transactionLevel + 1
+                )
+            );
+
+            if ($this->transactionCounter > 0) {
+                $this->transactionCounter--;
+            }
+
             return $this->dbAdapter->getDriver()->getConnection();
         }
 
-        // This will throw if error
         $connection = $this->dbAdapter->getDriver()->getConnection()->rollback();
 
-        if ($this->transactionLevel > 0) {
-            $this->transactionLevel--;
-        }
+        // Reset level
+        $this->transactionCounter = 0;
 
         return $connection;
     }
