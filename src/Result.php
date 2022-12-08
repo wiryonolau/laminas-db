@@ -133,11 +133,11 @@ class Result implements ItseasyResultInterface
         try {
             $row = $this->getFirstRow();
             if (method_exists($row, "getArrayCopy")) {
-                return current($row->getArrayCopy());
+                $row = $row->getArrayCopy();
             }
 
             if (is_array($row)) {
-                return $row[0];
+                return current($row);
             }
 
             throw new Exception("Cannot retrieve Single Value");
