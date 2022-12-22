@@ -134,8 +134,11 @@ class Database
 
     /**
      * Rollback transaction
+     * 
+     * @param force_rollback bool. Force rollback regardless transaction nested level
+     * @param exception Throwable. Rethrow exception is not null
      */
-    public function rollback(bool $force_rollback = false): AbstractConnection
+    public function rollback(bool $force_rollback = false, ?Throwable $exception = null): AbstractConnection
     {
         if (
             $this->inTransaction()
@@ -151,6 +154,11 @@ class Database
 
             if ($this->transactionCounter > 0) {
                 $this->transactionCounter--;
+            }
+
+            // Throw the exception and let caller handle the exception
+            if (!is_null($exception)) {
+                throw $exception;
             }
 
             return $this->dbAdapter->getDriver()->getConnection();
