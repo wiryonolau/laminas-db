@@ -58,11 +58,11 @@ class TableDiff
         if (!$existingTable) {
             $ddl = new Ddl\CreateTable($table->getName());
             foreach ($table->getColumns() as $column) {
-                $ddl->addColumn($column);
+                $ddl->addColumn($this->columnObjectToDdl($column));
             }
 
             foreach ($table->getConstraints() as $constraint) {
-                $ddl->addConstraint($constraint);
+                $ddl->addConstraint($this->constraintObjectToDdl($constraint));
             }
 
             $ddls[] = $ddl;
