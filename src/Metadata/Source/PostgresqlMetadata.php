@@ -85,6 +85,14 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
             'character_octet_length',
             'numeric_precision',
             'numeric_scale',
+            'is_identity',
+            'identity_generation',
+            'identity_start',
+            'identity_increment',
+            'identity_minimum',
+            'identity_maximum',
+            'identity_cycle',
+            'is_generated'
         ];
 
         array_walk($isColumns, function (&$c) use ($platform) {
@@ -107,9 +115,18 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
         $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
         $columns = [];
         foreach ($results->toArray() as $row) {
-            // nextval('user_id_seq'::regclass)
-            $erratas = [];
+            $erratas = [
+                'is_identity'              => 'YES' === $row['is_identity'],
+                'identity_generation'      => $row['identity_generation'],
+                'identity_start'           => $row['identity_start'],
+                'identity_increment'       => $row['identity_increment'],
+                'identity_minimum'         => $row['identity_minimum'],
+                'identity_maximum'         => $row['identity_maximum'],
+                'identity_cycle'           => $row['identity_cycle'],
+                'is_generated'             => $row['is_generated'],
+            ];
 
+            // nextval('user_id_seq'::regclass)
             $column_default = is_null($row["column_default"]) ? "" : $row["column_default"];
             preg_match("/nextval\('([a-z_]+)'.*\).*/", $column_default, $matches);
             if (count($matches)) {
@@ -127,7 +144,7 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
                 'numeric_precision'        => $row['numeric_precision'],
                 'numeric_scale'            => $row['numeric_scale'],
                 'numeric_unsigned'         => null,
-                'erratas'                  => $erratas,
+                'erratas'                  => $erratas
             ];
         }
 

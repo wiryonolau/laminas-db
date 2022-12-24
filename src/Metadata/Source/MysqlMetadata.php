@@ -108,7 +108,6 @@ class MysqlMetadata extends LaminasMysqlMetadata
                 $table->setEngine($data['engine']);
                 $table->setCollation($data['table_collation']);
                 $table->setCharset($this->getCharset($data['table_collation']));
-                $table->setType($data['table_type']);
                 break;
             case 'VIEW':
                 $table = new ViewObject($tableName);
