@@ -3,23 +3,19 @@
 namespace Itseasy\Database\Sql\Ddl;
 
 use Exception;
+use Itseasy\Database\Sql\Ddl\DdlUtilities;
 use Laminas\Db\Sql\Ddl;
 use Itseasy\Database\Metadata\Source\Factory;
 use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ColumnObject;
 use Laminas\Db\Metadata\Object\ConstraintObject;
-use Laminas\Db\Sql\Ddl\Column\Column;
-use Laminas\Db\Sql\Ddl\Column\ColumnInterface;
-use Laminas\Db\Sql\Ddl\Constraint\Check;
-use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
-use Laminas\Db\Sql\Ddl\Constraint\ForeignKey;
-use Laminas\Db\Sql\Ddl\Constraint\PrimaryKey;
-use Laminas\Db\Sql\Ddl\Constraint\UniqueKey;
 
 class TableDiff
 {
+    protected $adapter;
     protected $metadata;
+    protected $platformName;
 
     // array of table name
     protected $existingTableNames;
@@ -28,7 +24,9 @@ class TableDiff
         AdapterInterface $adapter,
         ?array $existingTableNames = []
     ) {
-        $this->metadata = Factory::createSourceFromAdapter($adapter);
+        $this->adapter = $adapter;
+        $this->platformName = $this->adapter->getPlatform()->getName();
+        $this->metadata = Factory::createSourceFromAdapter($this->adapter);
 
         if (empty($existingTableNames)) {
             $this->existingTableNames = $this->metadata->getTableNames();
@@ -56,16 +54,7 @@ class TableDiff
         }
 
         if (!$existingTable) {
-            $ddl = new Ddl\CreateTable($table->getName());
-            foreach ($table->getColumns() as $column) {
-                $ddl->addColumn($this->columnObjectToDdl($column));
-            }
-
-            foreach ($table->getConstraints() as $constraint) {
-                $ddl->addConstraint($this->constraintObjectToDdl($constraint));
-            }
-
-            $ddls[] = $ddl;
+            $ddls[] = DdlUtilities::tableObjectToDdl($table, $this->platformName);
         }
 
         if ($existingTable) {
@@ -99,17 +88,19 @@ class TableDiff
                     $hasChange = true;
                     $ddl->changeColumn(
                         $column->getName(),
-                        $this->columnObjectToDdl($column)
+                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
                     );
                 } else {
                     $hasChange = true;
-                    $ddl->addColumn($this->columnObjectToDdl($column));
+                    $ddl->addColumn(
+                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
+                    );
                 }
             }
 
             foreach ($table->getConstraints() as $constraint) {
                 if (isset($existingConstraints[$constraint->getName()])) {
-                    if (!$this->constraintHasDiff(
+                    if (!$this->constraintHasUpdate(
                         $existingConstraints[$constraint->getName()],
                         $constraint
                     )) {
@@ -122,7 +113,9 @@ class TableDiff
                     $ddls[] = $dropDdl;
                 }
                 $hasChange = true;
-                $ddl->addConstraint($this->constraintObjectToDdl($constraint));
+                $ddl->addConstraint(
+                    DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
+                );
             }
 
             if ($hasChange) {
@@ -158,9 +151,10 @@ class TableDiff
             return true;
         }
 
-        if ($existing->getCharacterOctetLength() !== $update->getCharacterOctetLength()) {
-            return true;
-        }
+        // Don't check octet length, not clear
+        // if ($existing->getCharacterOctetLength() !== $update->getCharacterOctetLength()) {
+        //     return true;
+        // }
 
         if ($existing->getNumericPrecision() !== $update->getNumericPrecision()) {
             return true;
@@ -184,7 +178,7 @@ class TableDiff
         return false;
     }
 
-    protected function constraintHasDiff(
+    protected function constraintHasUpdate(
         ConstraintObject $existing,
         ConstraintObject $update
     ): bool {
@@ -240,71 +234,5 @@ class TableDiff
         }
 
         return false;
-    }
-
-    protected function columnObjectToDdl(
-        ColumnObject $columnObject
-    ): ColumnInterface {
-        $type = ucfirst($columnObject->getDataType());
-
-        $columnNamespace = [
-            "Itseasy\Database\Sql\Ddl\Column",
-            "Laminas\Db\Sql\Ddl\Column"
-        ];
-
-
-        $object = new Column();
-        foreach ($columnNamespace as $namespace) {
-            if (class_exists(sprintf("{}\{}", $namespace, $type))) {
-                $object = sprintf("{}\{}", $namespace, $type);
-                break;
-            }
-        }
-
-        return new $object(
-            $columnObject->getName(),
-            $columnObject->isNullable(),
-            $columnObject->getColumnDefault(),
-            []
-        );
-    }
-
-    protected function constraintObjectToDdl(
-        ConstraintObject $constraintObject
-    ): ConstraintInterface {
-        switch ($constraintObject->getType()) {
-            case "PRIMARY KEY":
-                $ddl = new PrimaryKey(
-                    $constraintObject->getColumns(),
-                    $constraintObject->getName()
-                );
-                break;
-            case "UNIQUE":
-                $ddl = new UniqueKey(
-                    $constraintObject->getColumns(),
-                    $constraintObject->getName()
-                );
-                break;
-            case "FOREIGN KEY":
-                $ddl = new ForeignKey(
-                    $constraintObject->getName(),
-                    $constraintObject->getColumns(),
-                    $constraintObject->getReferencedTableName(),
-                    $constraintObject->getReferencedColumns(),
-                    $constraintObject->getDeleteRule(),
-                    $constraintObject->getUpdateRule()
-                );
-                break;
-            case "CHECK":
-                // not sure about this
-                $ddl = new Check(
-                    $constraintObject->getCheckClause(),
-                    $constraintObject->getName()
-                );
-                break;
-            default:
-                throw new Exception("Invalid constraint type");
-        }
-        return $ddl;
     }
 }
