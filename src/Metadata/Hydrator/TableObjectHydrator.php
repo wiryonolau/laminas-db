@@ -47,9 +47,8 @@ class TableObjectHydrator extends AbstractHydrator
         $objectClass->setName($data["name"]);
 
         if ($objectClass instanceof MysqlTableObject) {
-            $objectClass->setType($data["type"]);
             $objectClass->setCharset($data["charset"]);
-            $objectClass->setCollation($data["collaction"]);
+            $objectClass->setCollation($data["collation"]);
             $objectClass->setEngine($data["engine"]);
         }
 
