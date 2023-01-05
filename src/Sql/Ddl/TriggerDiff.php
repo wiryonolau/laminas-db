@@ -4,9 +4,11 @@ namespace Itseasy\Database\Sql\Ddl;
 
 use Exception;
 use Itseasy\Database\Metadata\Object\RoutineObject;
+use Itseasy\Database\Metadata\Source\Factory;
 use Itseasy\Database\Sql\Ddl\Routine\PostgresqlCreateRoutine;
 use Itseasy\Database\Sql\Ddl\Trigger\MysqlCreateTrigger;
 use Itseasy\Database\Sql\Ddl\Trigger\PostgresqlCreateTrigger;
+use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Metadata\Object\TriggerObject;
 
 class TriggerDiff

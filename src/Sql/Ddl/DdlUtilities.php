@@ -174,14 +174,19 @@ class DdlUtilities
         string $platformName
     ): SqlInterface {
         $ddl = new CreateTable($table->getName());
-        foreach ($table->getColumns() as $column) {
-            $ddl->addColumn(self::columnObjectToDdl($column, $platformName));
+
+        if (!empty($table->getColumns())) {
+            foreach ($table->getColumns() as $column) {
+                $ddl->addColumn(self::columnObjectToDdl($column, $platformName));
+            }
         }
 
-        foreach ($table->getConstraints() as $constraint) {
-            $ddl->addConstraint(
-                self::constraintObjectToDdl($constraint, $platformName)
-            );
+        if (!empty($table->getConstraints())) {
+            foreach ($table->getConstraints() as $constraint) {
+                $ddl->addConstraint(
+                    self::constraintObjectToDdl($constraint, $platformName)
+                );
+            }
         }
 
         return $ddl;

@@ -74,48 +74,52 @@ class TableDiff
                 $existingConstraints[$constraint->getName()] = $constraint;
             }
 
-            foreach ($table->getColumns() as $column) {
-                if (
-                    isset($existingColumns[$column->getName()])
-                ) {
-                    if (!$this->columnHasUpdate(
-                        $existingColumns[$column->getName()],
-                        $column
-                    )) {
-                        continue;
-                    }
+            if (!empty($table->getColumns())) {
+                foreach ($table->getColumns() as $column) {
+                    if (
+                        isset($existingColumns[$column->getName()])
+                    ) {
+                        if (!$this->columnHasUpdate(
+                            $existingColumns[$column->getName()],
+                            $column
+                        )) {
+                            continue;
+                        }
 
-                    $hasChange = true;
-                    $ddl->changeColumn(
-                        $column->getName(),
-                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
-                    );
-                } else {
-                    $hasChange = true;
-                    $ddl->addColumn(
-                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
-                    );
+                        $hasChange = true;
+                        $ddl->changeColumn(
+                            $column->getName(),
+                            DdlUtilities::columnObjectToDdl($column, $this->platformName)
+                        );
+                    } else {
+                        $hasChange = true;
+                        $ddl->addColumn(
+                            DdlUtilities::columnObjectToDdl($column, $this->platformName)
+                        );
+                    }
                 }
             }
 
-            foreach ($table->getConstraints() as $constraint) {
-                if (isset($existingConstraints[$constraint->getName()])) {
-                    if (!$this->constraintHasUpdate(
-                        $existingConstraints[$constraint->getName()],
-                        $constraint
-                    )) {
-                        continue;
-                    }
+            if (!empty($table->getConstraints())) {
+                foreach ($table->getConstraints() as $constraint) {
+                    if (isset($existingConstraints[$constraint->getName()])) {
+                        if (!$this->constraintHasUpdate(
+                            $existingConstraints[$constraint->getName()],
+                            $constraint
+                        )) {
+                            continue;
+                        }
 
+                        $hasChange = true;
+                        $dropDdl  = new Ddl\AlterTable($table->getName());
+                        $dropDdl->dropConstraint($constraint->getName());
+                        $ddls[] = $dropDdl;
+                    }
                     $hasChange = true;
-                    $dropDdl  = new Ddl\AlterTable($table->getName());
-                    $dropDdl->dropConstraint($constraint->getName());
-                    $ddls[] = $dropDdl;
+                    $ddl->addConstraint(
+                        DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
+                    );
                 }
-                $hasChange = true;
-                $ddl->addConstraint(
-                    DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
-                );
             }
 
             if ($hasChange) {
