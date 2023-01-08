@@ -15,7 +15,7 @@ PROJECT_NAME := "$$(basename `pwd` | cut -d. -f1 )"
 	@echo ""
 all:
 	@echo ""
-run:
+cli:
 	docker run --rm -it \
         -v $$(pwd):/srv/${PROJECT_NAME} \
 		-w /srv/${PROJECT_NAME} \
