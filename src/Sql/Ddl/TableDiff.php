@@ -46,6 +46,10 @@ class TableDiff
     ): array {
         $ddls = [];
 
+        if (empty($table->getColumns())) {
+            throw new Exception("Table require to have at least 1 column define");
+        }
+
         if (
             is_null($existingTable)
             and in_array($table->getName(), $this->existingTableNames)
@@ -56,6 +60,7 @@ class TableDiff
         if (!$existingTable) {
             $ddls[] = DdlUtilities::tableObjectToDdl($table, $this->platformName);
         }
+
 
         if ($existingTable) {
             $existingColumns = [];
@@ -74,30 +79,38 @@ class TableDiff
                 $existingConstraints[$constraint->getName()] = $constraint;
             }
 
-            if (!empty($table->getColumns())) {
-                foreach ($table->getColumns() as $column) {
-                    if (
-                        isset($existingColumns[$column->getName()])
-                    ) {
-                        if (!$this->columnHasUpdate(
-                            $existingColumns[$column->getName()],
-                            $column
-                        )) {
-                            continue;
-                        }
-
-                        $hasChange = true;
-                        $ddl->changeColumn(
-                            $column->getName(),
-                            DdlUtilities::columnObjectToDdl($column, $this->platformName)
-                        );
-                    } else {
-                        $hasChange = true;
-                        $ddl->addColumn(
-                            DdlUtilities::columnObjectToDdl($column, $this->platformName)
-                        );
+            foreach ($table->getColumns() as $column) {
+                if (
+                    isset($existingColumns[$column->getName()])
+                ) {
+                    if (!$this->columnHasUpdate(
+                        $existingColumns[$column->getName()],
+                        $column
+                    )) {
+                        unset($existingColumns[$column->getName()]);
+                        continue;
                     }
+
+                    $hasChange = true;
+                    $ddl->changeColumn(
+                        $column->getName(),
+                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
+                    );
+                } else {
+                    $hasChange = true;
+                    $ddl->addColumn(
+                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
+                    );
                 }
+
+                // Remove new column / alter column
+                unset($existingColumns[$column->getName()]);
+            }
+
+            // Remove column
+            foreach (array_keys($existingColumns) as $name) {
+                $hasChange = true;
+                $ddl->dropColumn($name);
             }
 
             if (!empty($table->getConstraints())) {
@@ -107,6 +120,7 @@ class TableDiff
                             $existingConstraints[$constraint->getName()],
                             $constraint
                         )) {
+                            unset($existingConstraints[$constraint->getName()]);
                             continue;
                         }
 
@@ -115,10 +129,18 @@ class TableDiff
                         $dropDdl->dropConstraint($constraint->getName());
                         $ddls[] = $dropDdl;
                     }
+
                     $hasChange = true;
                     $ddl->addConstraint(
                         DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
                     );
+
+                    unset($existingConstraints[$constraint->getName()]);
+                }
+
+                foreach (array_keys($existingConstraints) as $name) {
+                    $hasChange = true;
+                    $ddl->dropConstraint($name);
                 }
             }
 
@@ -155,7 +177,7 @@ class TableDiff
             return true;
         }
 
-        // Don't check octet length, not clear
+        // Don't check octet length, not sure what the value means
         // if ($existing->getCharacterOctetLength() !== $update->getCharacterOctetLength()) {
         //     return true;
         // }
