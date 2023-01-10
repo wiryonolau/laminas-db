@@ -77,6 +77,11 @@ class SchemaDiff
         $constraintObjectHydrator = new ConstraintObjectHydrator();
         $triggerObjectHydrator = new ClassMethodsHydrator();
 
+        $schema = array_merge(
+            ["tables" => [], "triggers" => [], "expressions" => []],
+            $schema
+        );
+
         foreach ($schema["tables"] as $index => $table) {
             if (is_array($table)) {
                 $table = $tableObjectHydrator->hydrate(
