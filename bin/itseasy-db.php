@@ -20,7 +20,8 @@ include __DIR__ . '/../vendor/autoload.php';
 $application = new \Symfony\Component\Console\Application();
 
 $commands = [
-    \Itseasy\Database\Console\Command\DatabaseCommand::class
+    \Itseasy\Database\Console\Command\SchemaCommand::class,
+    \Itseasy\Database\Console\Command\DataCommand::class
 ];
 
 foreach ($commands as $command) {
