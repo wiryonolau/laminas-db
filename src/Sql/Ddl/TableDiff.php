@@ -108,6 +108,7 @@ class TableDiff
             }
 
             // Remove column
+            // Drop column will automatically drop index related to the column
             foreach (array_keys($existingColumns) as $name) {
                 $hasChange = true;
                 $ddl->dropColumn($name);
