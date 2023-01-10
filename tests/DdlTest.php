@@ -48,7 +48,9 @@ final class DdlTest extends TestCase
 
         $db = new Database($adapter, $this->logger);
 
+
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
+        debug($meta->getMetadata());
 
         $tables = $meta->getTables();
         foreach ($tables as $table) {
@@ -84,6 +86,7 @@ final class DdlTest extends TestCase
         $db = new Database($adapter, $this->logger);
 
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
+        debug($meta->getMetadata());
 
         $tables = $meta->getTables();
         foreach ($tables as $table) {

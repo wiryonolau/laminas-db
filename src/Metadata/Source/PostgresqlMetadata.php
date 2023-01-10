@@ -3,6 +3,7 @@
 namespace Itseasy\Database\Metadata\Source;
 
 use Exception;
+use Itseasy\Database\Metadata\Object\PostgresqlIndexObject;
 use Itseasy\Database\Metadata\Object\RoutineObject;
 use Itseasy\Database\Metadata\Object\SequenceObject;
 use Laminas\Db\Adapter\Adapter;
@@ -10,6 +11,18 @@ use Laminas\Db\Metadata\Source\PostgresqlMetadata as SourcePostgresqlMetadata;
 
 class PostgresqlMetadata extends SourcePostgresqlMetadata
 {
+    public function getMetadata(): array
+    {
+        return [
+            "tables" => $this->getTables(null, false),
+            "views" => $this->getViews(),
+            "triggers" => $this->getTriggers(),
+            "sequences" => $this->getSequences(),
+            "routines" => $this->getRoutines(),
+            "indexes" => $this->getIndexes()
+        ];
+    }
+
     public function getSequenceNames($schema = null)
     {
         if ($schema === null) {
@@ -387,5 +400,103 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
         }
 
         $this->data['triggers'][$schema] = $data;
+    }
+
+    public function getIndexNames($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadIndexData($schema);
+
+        return array_keys($this->data['indexes'][$schema]);
+    }
+
+    public function getIndexes($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $indexes = [];
+        foreach ($this->getIndexNames($schema) as $sequenceName) {
+            $indexes[] = $this->getIndex($sequenceName, $schema);
+        }
+        return $indexes;
+    }
+
+    public function getIndex($indexName, $schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadRoutinesData($schema);
+
+        if (!isset($this->data['indexes'][$schema][$indexName])) {
+            throw new Exception('Index "' . $indexName . '" does not exist');
+        }
+
+        $info = $this->data['indexes'][$schema][$indexName];
+
+        $index = new PostgresqlIndexObject();
+
+        $index->setName($indexName);
+        $index->setTableName($info["tablename"]);
+        $index->setIndexDefinition($info["indexdef"]);
+
+        return $index;
+    }
+
+    protected function loadIndexData($schema)
+    {
+        if (isset($this->data['indexes'][$schema])) {
+            return;
+        }
+
+        $this->prepareDataHierarchy('indexes', $schema);
+
+        $p = $this->adapter->getPlatform();
+
+        $isColumns = [
+            'indexname',
+            'tablename',
+            'indexdef'
+        ];
+
+        array_walk($isColumns, function (&$c) use ($p) {
+            if (is_array($c)) {
+                $alias = key($c);
+                $c     = $p->quoteIdentifierChain($c);
+                if (is_string($alias)) {
+                    $c .= ' ' . $p->quoteIdentifier($alias);
+                }
+            } else {
+                $c = $p->quoteIdentifier($c);
+            }
+        });
+
+        $sql = 'SELECT ' . implode(', ', $isColumns)
+            . ' FROM ' . $p->quoteIdentifierChain(['pg_indexes'])
+            . ' WHERE ';
+
+        if ($schema !== self::DEFAULT_SCHEMA) {
+            $sql .= $p->quoteIdentifier('schemaname')
+                . ' = ' . $p->quoteTrustedValue($schema);
+        } else {
+            $sql .= $p->quoteIdentifier('schemaname')
+                . ' != \'pg_catalog\'';
+        }
+
+        $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
+
+        $data = [];
+        foreach ($results->toArray() as $row) {
+            $row                             = array_change_key_case($row, CASE_LOWER);
+            $data[$row['indexname']] = $row;
+        }
+
+        $this->data['indexes'][$schema] = $data;
     }
 }

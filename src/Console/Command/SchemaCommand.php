@@ -2,7 +2,6 @@
 
 namespace Itseasy\Database\Console\Command;
 
-
 use Itseasy\Database\Sql\Ddl\SchemaDiff;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Adapter\AdapterInterface;
@@ -17,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 use PDO;
 
-class DatabaseCommand extends Command implements LoggerAwareInterface
+class SchemaCommand extends Command implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
@@ -29,7 +28,7 @@ class DatabaseCommand extends Command implements LoggerAwareInterface
         $this->setHelp('Database schema manager');
         $this->setDescription('Database schema manager');
 
-        $this->addArgument("file", InputArgument::REQUIRED, "Php metadata file, must return a metadata object", null);
+        $this->addArgument("file", InputArgument::REQUIRED, "Php metadata file, must return a metadata array", null);
         $this->addOption("username", "u", InputOption::VALUE_REQUIRED, "Connection username");
         $this->addOption("password", "p", InputOption::VALUE_REQUIRED, "Connection password");
         $this->addOption("dsn", null, InputOption::VALUE_REQUIRED, implode("\n", [
@@ -53,14 +52,16 @@ class DatabaseCommand extends Command implements LoggerAwareInterface
 
         $ddls = SchemaDiff::diff($schema, $adapter);
 
-        if ($apply) {
-        } else {
-            array_map([$output, "writeln"], $ddls);
+        foreach ($ddls as $ddl) {
+            $output->writeln(trim($ddl) . "\n");
+
+            if ($apply) {
+                $adapter->query($ddl, Adapter::QUERY_MODE_EXECUTE);
+            }
         }
 
         return Command::SUCCESS;
     }
-
 
     protected function createAdapter(
         ?string $dsn = null,

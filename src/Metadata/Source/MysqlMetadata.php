@@ -3,7 +3,9 @@
 namespace Itseasy\Database\Metadata\Source;
 
 use Exception;
+use Itseasy\Database\Metadata\Object\MysqlIndexObject;
 use Itseasy\Database\Metadata\Object\MysqlTableObject;
+use Itseasy\Database\Metadata\Object\RoutineObject;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Metadata\Source\MysqlMetadata as LaminasMysqlMetadata;
@@ -11,6 +13,17 @@ use Laminas\Db\Metadata\Object\AbstractTableObject;
 
 class MysqlMetadata extends LaminasMysqlMetadata
 {
+    public function getMetadata(): array
+    {
+        return [
+            "tables" => $this->getTables(null, false),
+            "views" => $this->getViews(),
+            "triggers" => $this->getTriggers(),
+            "indexes" => $this->getIndexes(),
+            "routines" => $this->getRoutines()
+        ];
+    }
+
     protected function loadTableNameData($schema): void
     {
         if (isset($this->data['table_names'][$schema])) {
@@ -321,5 +334,211 @@ class MysqlMetadata extends LaminasMysqlMetadata
 
         $this->data['constraints'][$schema][$table] = $constraints;
         // phpcs:enable WebimpressCodingStandard.NamingConventions.ValidVariableName.NotCamelCaps
+    }
+
+    public function getRoutineNames($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadRoutinesData($schema);
+
+        return array_keys($this->data['routines'][$schema]);
+    }
+
+    public function getRoutines($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $sequences = [];
+        foreach ($this->getRoutineNames($schema) as $sequenceName) {
+            $sequences[] = $this->getRoutine($sequenceName, $schema);
+        }
+        return $sequences;
+    }
+
+    public function getRoutine($routineName, $schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadRoutinesData($schema);
+
+        if (!isset($this->data['routines'][$schema][$routineName])) {
+            throw new Exception('Routine "' . $routineName . '" does not exist');
+        }
+
+        $info = $this->data['routines'][$schema][$routineName];
+
+        $routine = new RoutineObject();
+
+        $routine->setName($routineName);
+        $routine->setType($info["routine_type"]);
+        $routine->setDataType($info["data_type"]);
+        $routine->setBody($info['routine_body']);
+        $routine->setDefinition($info['routine_definition']);
+        $routine->setExternalName($info['external_name']);
+        $routine->setExternalLanguage($info['external_language']);
+
+        return $routine;
+    }
+
+    protected function loadRoutinesData($schema)
+    {
+        if (isset($this->data['routines'][$schema])) {
+            return;
+        }
+
+        $this->prepareDataHierarchy('routines', $schema);
+
+        $p = $this->adapter->getPlatform();
+
+        $isColumns = [
+            'routine_name',
+            'routine_type',
+            'routine_body',
+            'routine_definition',
+            'data_type',
+            'external_name',
+            'external_language'
+        ];
+
+        array_walk($isColumns, function (&$c) use ($p) {
+            if (is_array($c)) {
+                $alias = key($c);
+                $c     = $p->quoteIdentifierChain($c);
+                if (is_string($alias)) {
+                    $c .= ' ' . $p->quoteIdentifier($alias);
+                }
+            } else {
+                $c = $p->quoteIdentifier($c);
+            }
+        });
+
+        $sql = 'SELECT ' . implode(', ', $isColumns)
+            . ' FROM ' . $p->quoteIdentifierChain(['information_schema', 'routines'])
+            . ' WHERE ';
+
+        if ($schema !== self::DEFAULT_SCHEMA) {
+            $sql .= $p->quoteIdentifier('routine_schema')
+                . ' = ' . $p->quoteTrustedValue($schema);
+        } else {
+            $sql .= $p->quoteIdentifier('routine_schema')
+                . ' != \'information_schema\'';
+        }
+
+        $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
+
+        $data = [];
+        foreach ($results->toArray() as $row) {
+            $row                             = array_change_key_case($row, CASE_LOWER);
+            $data[$row['routine_name']] = $row;
+        }
+
+        $this->data['routines'][$schema] = $data;
+    }
+
+    public function getIndexNames($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadIndexData($schema);
+
+        return array_keys($this->data['indexes'][$schema]);
+    }
+
+    public function getIndexes($schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $indexes = [];
+        foreach ($this->getIndexNames($schema) as $sequenceName) {
+            $indexes[] = $this->getIndex($sequenceName, $schema);
+        }
+        return $indexes;
+    }
+
+    public function getIndex($indexName, $schema = null)
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadRoutinesData($schema);
+
+        if (!isset($this->data['indexes'][$schema][$indexName])) {
+            throw new Exception('Index "' . $indexName . '" does not exist');
+        }
+
+        $info = $this->data['indexes'][$schema][$indexName];
+
+        $index = new MysqlIndexObject();
+
+        $index->setName($indexName);
+        $index->setTableName($info["table_name"]);
+        $index->setColumnName($info["column_name"]);
+        $index->setIndexType($info["index_type"]);
+
+        return $index;
+    }
+
+    protected function loadIndexData($schema)
+    {
+        if (isset($this->data['indexes'][$schema])) {
+            return;
+        }
+
+        $this->prepareDataHierarchy('indexes', $schema);
+
+        $p = $this->adapter->getPlatform();
+
+        $isColumns = [
+            'index_name',
+            'table_name',
+            'column_name',
+            'index_type'
+        ];
+
+        array_walk($isColumns, function (&$c) use ($p) {
+            if (is_array($c)) {
+                $alias = key($c);
+                $c     = $p->quoteIdentifierChain($c);
+                if (is_string($alias)) {
+                    $c .= ' ' . $p->quoteIdentifier($alias);
+                }
+            } else {
+                $c = $p->quoteIdentifier($c);
+            }
+        });
+
+        $sql = 'SELECT ' . implode(', ', $isColumns)
+            . ' FROM ' . $p->quoteIdentifierChain(['information_schema', 'statistics'])
+            . ' WHERE ';
+
+        if ($schema !== self::DEFAULT_SCHEMA) {
+            $sql .= $p->quoteIdentifier('index_schema')
+                . ' = ' . $p->quoteTrustedValue($schema);
+        } else {
+            $sql .= $p->quoteIdentifier('index_schema')
+                . ' != \'information_schema\'';
+        }
+
+        $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
+
+        $data = [];
+        foreach ($results->toArray() as $row) {
+            $row                             = array_change_key_case($row, CASE_LOWER);
+            $data[$row['index_name']] = $row;
+        }
+
+        $this->data['indexes'][$schema] = $data;
     }
 }

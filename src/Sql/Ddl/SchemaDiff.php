@@ -20,6 +20,8 @@ use Laminas\Hydrator\ClassMethodsHydrator;
 
 /**
  * Calculate schema differences by comparing given array of tables and triggers with current metadata
+ * 
+ * Only diff table and constraint
  */
 class SchemaDiff
 {
@@ -32,6 +34,10 @@ class SchemaDiff
         switch ($adapter->getPlatform()->getName()) {
             case Factory::PLATFORM_MYSQL:
                 $tableObject = MysqlTableObject::class;
+                break;
+            case Factory::PLATFORM_POSTGRESQL:
+                $tableObject = AbstractTableObject::class;
+                break;
             default:
                 $tableObject = AbstractTableObject::class;
         }
@@ -55,11 +61,17 @@ class SchemaDiff
             }
         }
 
+        foreach ($schema["expressions"] as $expression) {
+            $ddl_string[] = $expression;
+        }
+
         return $ddl_string;
     }
 
-    public static function hydrate(array $schema, string $tableObject)
-    {
+    public static function hydrate(
+        array $schema,
+        string $tableObject
+    ) {
         $tableObjectHydrator = new TableObjectHydrator();
         $columnObjectHydrator = new ColumnObjectHydrator();
         $constraintObjectHydrator = new ConstraintObjectHydrator();
@@ -146,6 +158,7 @@ class SchemaDiff
             $schema["tables"][$index] = $table;
         }
 
+
         $schema["triggers"]  = array_map(
             function ($trigger) use ($triggerObjectHydrator) {
                 if ($trigger instanceof TriggerObject) {
@@ -169,6 +182,18 @@ class SchemaDiff
             },
             $schema["triggers"]
         );
+
+        $schema["expressions"] = array_map(
+            function ($expression) {
+                if (!is_string($expression)) {
+                    throw new Exception("Invalid sql expression object");
+                }
+                return $expression;
+            },
+            $schema["expressions"]
+        );
+
+        /* TODO: Routines */
 
         return $schema;
     }
