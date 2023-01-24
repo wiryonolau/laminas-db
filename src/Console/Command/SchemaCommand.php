@@ -28,7 +28,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
         $this->setHelp('Database schema manager');
         $this->setDescription('Database schema manager');
 
-        $this->addArgument("file", InputArgument::REQUIRED, "Php metadata file, must return a metadata array", null);
+        $this->addOption("file", "f", InputOption::VALUE_REQUIRED, "Php metadata file, must return a metadata array");
         $this->addOption("username", "u", InputOption::VALUE_REQUIRED, "Connection username");
         $this->addOption("password", "p", InputOption::VALUE_REQUIRED, "Connection password");
         $this->addOption("dsn", null, InputOption::VALUE_REQUIRED, implode("\n", [
@@ -41,7 +41,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $schema_file = realpath($input->getArgument("file"));
+        $schema_file = realpath(APP_DIR.DIRECTORY_SEPARATOR.$input->getOption("file"));
         $dsn = $input->getOption("dsn");
         $username = $input->getOption("username");
         $password = $input->getOption("password");

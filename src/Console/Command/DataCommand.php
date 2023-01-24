@@ -35,7 +35,7 @@ class DataCommand extends Command implements LoggerAwareInterface
         $this->setHelp('Database data manager');
         $this->setDescription('Database data manager');
 
-        $this->addArgument("file", InputArgument::REQUIRED, "Php file, must return array of PreparableSqlInterface", null);
+        $this->addOption("file", "f", InputOption::VALUE_REQUIRED, "Php file, must return array of PreparableSqlInterface");
         $this->addOption("username", "u", InputOption::VALUE_REQUIRED, "Connection username");
         $this->addOption("password", "p", InputOption::VALUE_REQUIRED, "Connection password");
         $this->addOption("dsn", null, InputOption::VALUE_REQUIRED, implode("\n", [
@@ -49,7 +49,7 @@ class DataCommand extends Command implements LoggerAwareInterface
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $data_file = realpath($input->getArgument("file"));
+        $data_file = realpath(APP_DIR.DIRECTORY_SEPARATOR.$input->getOption("file"));
         $dsn = $input->getOption("dsn");
         $username = $input->getOption("username");
         $password = $input->getOption("password");

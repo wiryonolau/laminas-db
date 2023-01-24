@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 chdir(dirname(__DIR__));
 
 // Decline static file requests back to the PHP built-in webserver
@@ -14,9 +13,11 @@ if (php_sapi_name() === 'cli-server') {
     unset($path);
 }
 
-
-// Composer autoloading, require composer ^2.2                                                                                                                                                
+// Composer autoloading, require composer ^2.2
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
+
+$reflection = new \ReflectionClass(\Composer\Autoload\ClassLoader::class);
+define("APP_DIR", dirname(dirname(dirname($reflection->getFileName()))));
 
 $application = new \Symfony\Component\Console\Application();
 
