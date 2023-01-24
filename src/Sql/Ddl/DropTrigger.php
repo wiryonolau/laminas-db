@@ -4,6 +4,7 @@ namespace Itseasy\Database\Sql\Ddl;
 
 use Laminas\Db\Adapter\Platform\PlatformInterface;
 use Laminas\Db\Sql\AbstractSql;
+use Laminas\Db\Sql\Ddl\SqlInterface;
 
 class DropTrigger extends AbstractSql implements SqlInterface
 {
