@@ -116,12 +116,19 @@ class TableDiff
 
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
-                    if (isset($existingConstraints[$constraint->getName()])) {
+                    // Metadata combine table name with constraint name to differentiate
+                    if ($constraint->getType() == "FOREIGN KEY") {
+                        $constraintName = $constraint->getName();
+                    } else {
+                        $constraintName = $table->getName() . "_" . $constraint->getName();
+                    }
+
+                    if (isset($existingConstraints[$constraintName])) {
                         if (!$this->constraintHasUpdate(
-                            $existingConstraints[$constraint->getName()],
+                            $existingConstraints[$constraintName],
                             $constraint
                         )) {
-                            unset($existingConstraints[$constraint->getName()]);
+                            unset($existingConstraints[$constraintName]);
                             continue;
                         }
 
@@ -130,18 +137,21 @@ class TableDiff
                         $dropDdl->dropConstraint($constraint->getName());
                         $ddls[] = $dropDdl;
                     }
-
                     $hasChange = true;
                     $ddl->addConstraint(
                         DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
                     );
-
                     unset($existingConstraints[$constraint->getName()]);
                 }
 
                 foreach (array_keys($existingConstraints) as $name) {
                     $hasChange = true;
-                    $ddl->dropConstraint($name);
+                    // Metadata combine table name with constraint name to differentiate, strip to remove
+                    if ($constraint->getType() == "FOREIGN KEY") {
+                        $ddl->dropConstraint($name);
+                    } else {
+                        $ddl->dropConstraint(preg_replace(sprintf("/^%s_/", $table->getName()), "", $name));
+                    }
                 }
             }
 
@@ -162,19 +172,25 @@ class TableDiff
         ColumnObject $existing,
         ColumnObject $update
     ): bool {
-        if ($existing->getColumnDefault() != $update->getColumnDefault()) {
+        if (
+            !empty($update->getColumnDefault())
+            and $existing->getColumnDefault() != $update->getColumnDefault()
+        ) {
             return true;
         }
 
-        if ($existing->isNullable() !== $update->isNullable()) {
+        if ($existing->isNullable() != $update->isNullable()) {
             return true;
         }
 
-        if ($existing->getDataType() !== $update->getDataType()) {
+        if (DdlUtilities::getColumnType($existing, $this->platformName) != DdlUtilities::getColumnType($update, $this->platformName)) {
             return true;
         }
 
-        if ($existing->getCharacterMaximumLength() !== $update->getCharacterMaximumLength()) {
+        if (
+            !empty($update->getCharacterMaximumLength())
+            and $existing->getCharacterMaximumLength() != $update->getCharacterMaximumLength()
+        ) {
             return true;
         }
 
@@ -183,21 +199,29 @@ class TableDiff
         //     return true;
         // }
 
-        if ($existing->getNumericPrecision() !== $update->getNumericPrecision()) {
+        if (
+            !empty($update->getNumericPrecision()) and
+            $existing->getNumericPrecision() != $update->getNumericPrecision()
+        ) {
             return true;
         }
 
-        if ($existing->getNumericScale() !== $update->getNumericScale()) {
+        if (
+            !empty($update->getNumericScale()) and
+            $existing->getNumericScale() != $update->getNumericScale()
+        ) {
             return true;
         }
 
-        if ($existing->getNumericUnsigned() !== $update->getNumericUnsigned()) {
+        if (
+            !empty($update->getNumericUnsigned()) and
+            $existing->getNumericUnsigned() != $update->getNumericUnsigned()
+        ) {
             return true;
         }
 
         foreach ($existing->getErratas() as $key => $value) {
-            if ($update->getErrata($key) !== $value) {
-                debug(["errata", $key, $value, $update->getErrata($key)]);
+            if ($update->getErrata($key) != $value) {
                 return true;
             }
         }
@@ -213,30 +237,30 @@ class TableDiff
             return true;
         }
 
-        if ($existing->getSchemaName() !== $update->getSchemaName()) {
-            return true;
-        }
+        // if ($existing->getSchemaName() !== $update->getSchemaName()) {
+        //     return true;
+        // }
 
         if ($existing->getType() !== $update->getType()) {
             return true;
         }
 
-        $existingColumns = is_null($existing->getColumns()) ? [] : $existing->getColumns();
-        $updateColumns = is_null($update->getColumns()) ? [] : $update->getColumns();
+        $existingColumns = is_null($existing->getColumns()) ? [] : array_filter($existing->getColumns());
+        $updateColumns = is_null($update->getColumns()) ? [] : array_filter($update->getColumns());
         if (count(array_diff($existingColumns, $updateColumns))) {
             return true;
         }
 
-        if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
-            return true;
-        }
+        // if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
+        //     return true;
+        // }
 
         if ($existing->getReferencedTableName() !== $update->getReferencedTableName()) {
             return true;
         }
 
-        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : $existing->getReferencedColumns();
-        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : $update->getReferencedColumns();
+        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : array_filter($existing->getReferencedColumns());
+        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : array_filter($update->getReferencedColumns());
         if (count(array_diff(
             $existingReferenceColumns,
             $updateReferencesColumns
@@ -244,7 +268,10 @@ class TableDiff
             return true;
         }
 
-        if ($existing->getMatchOption() !== $update->getMatchOption()) {
+        if (
+            !empty($update->getMatchOption())
+            and $existing->getMatchOption() !== $update->getMatchOption()
+        ) {
             return true;
         }
 

@@ -46,7 +46,8 @@ class SchemaDiff
         $ddl_string = [];
 
         foreach ($schema["tables"] as $table) {
-            $ddls = $tableDiff->diff($table);
+            // Remove empty ddl 
+            $ddls = array_filter($tableDiff->diff($table));
 
             foreach ($ddls as $ddl) {
                 $ddl_string[] = $sql->buildSqlString($ddl);
@@ -54,7 +55,8 @@ class SchemaDiff
         }
 
         foreach ($schema["triggers"] as $trigger) {
-            $ddls = $triggerDiff->diff($trigger);
+            // Remove empty ddl 
+            $ddls = array_filter($triggerDiff->diff($trigger));
 
             foreach ($ddls as $ddl) {
                 $ddl_string[] = $sql->buildSqlString($ddl);

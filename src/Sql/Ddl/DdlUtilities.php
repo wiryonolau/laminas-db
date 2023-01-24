@@ -16,6 +16,7 @@ use Laminas\Db\Sql\Ddl\Column\AbstractPrecisionColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractTimestampColumn;
 use Laminas\Db\Sql\Ddl\Column\Column;
 use Laminas\Db\Sql\Ddl\Column\ColumnInterface;
+use Laminas\Db\Sql\Ddl\Column\Integer;
 use Laminas\Db\Sql\Ddl\Constraint\Check;
 use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
 use Laminas\Db\Sql\Ddl\Constraint\ForeignKey;
@@ -26,12 +27,16 @@ use Laminas\Db\Sql\Ddl\SqlInterface;
 
 class DdlUtilities
 {
+    /**
+     * Mapping MySQL datatype to Ddl Object
+     */
     protected static function getMysqlColumnType(
         ColumnObject $columnObject
     ): string {
         $type = strtolower($columnObject->getDataType());
         switch ($type) {
             case "bit":
+            case "tinyint":
                 return "Boolean";
             case "float":
                 return "Floating";
@@ -53,11 +58,13 @@ class DdlUtilities
         }
     }
 
+    /**
+     * Mapping PostgreSQL datatype to Ddl Object
+     */
     protected static function getPostgresqlColumnType(
         ColumnObject $columnObject
     ): string {
         $type = strtolower($columnObject->getDataType());
-
         switch ($type) {
             case "bit":
                 return "Bit";

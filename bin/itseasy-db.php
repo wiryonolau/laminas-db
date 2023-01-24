@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Laminas\Log\LoggerInterface;
 
 chdir(dirname(__DIR__));
 
@@ -14,8 +15,11 @@ if (php_sapi_name() === 'cli-server') {
     unset($path);
 }
 
-// Composer autoloading
-include __DIR__ . '/../vendor/autoload.php';
+// Composer autoloading, require composer ^2.2
+include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
+
+$reflection = new \ReflectionClass(\Composer\Autoload\ClassLoader::class);
+define("APP_DIR", dirname(dirname(dirname($reflection->getFileName()))));
 
 $application = new \Symfony\Component\Console\Application();
 
@@ -24,7 +28,12 @@ $commands = [
     \Itseasy\Database\Console\Command\DataCommand::class
 ];
 
+$logger = new Laminas\Log\Logger();
+$logger->addWriter('stream', null, ['stream' => 'php://stderr']);
+
 foreach ($commands as $command) {
+    $commandObject = new $command();
+    $commandObject->setLogger($logger);
     $application->add(new $command());
 }
 

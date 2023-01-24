@@ -11,12 +11,12 @@ use Laminas\Db\Adapter\ExceptionInterface;
 use Laminas\Db\Adapter\ParameterContainer;
 use Laminas\Db\Sql\Sql;
 use Laminas\Db\Sql\SqlInterface;
+use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Laminas\Log\LoggerInterface;
-use PDO;
 use PDOException;
 
-class Database
+class Database implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 

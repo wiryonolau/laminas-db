@@ -245,6 +245,7 @@ class MysqlMetadata extends LaminasMysqlMetadata
             ['KCU', 'REFERENCED_TABLE_SCHEMA'],
             ['KCU', 'REFERENCED_TABLE_NAME'],
             ['KCU', 'REFERENCED_COLUMN_NAME'],
+            ['CC', 'CHECK_CLAUSE']
         ];
 
         $p = $this->adapter->getPlatform();
@@ -275,6 +276,12 @@ class MysqlMetadata extends LaminasMysqlMetadata
             . '  = ' . $p->quoteIdentifierChain(['RC', 'CONSTRAINT_SCHEMA'])
             . ' AND ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_NAME'])
             . '  = ' . $p->quoteIdentifierChain(['RC', 'CONSTRAINT_NAME'])
+
+            . ' LEFT JOIN ' . $p->quoteIdentifierChain(['INFORMATION_SCHEMA', 'CHECK_CONSTRAINTS']) . ' CC'
+            . ' ON ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_SCHEMA'])
+            . '  = ' . $p->quoteIdentifierChain(['CC', 'CONSTRAINT_SCHEMA'])
+            . ' AND ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_NAME'])
+            . '  = ' . $p->quoteIdentifierChain(['CC', 'CONSTRAINT_NAME'])
 
             . ' WHERE ' . $p->quoteIdentifierChain(['T', 'TABLE_NAME'])
             . ' = ' . $p->quoteTrustedValue($table)
@@ -316,6 +323,7 @@ class MysqlMetadata extends LaminasMysqlMetadata
                     'constraint_type' => $row['CONSTRAINT_TYPE'],
                     'table_name'      => $row['TABLE_NAME'],
                     'columns'         => [],
+                    'check_clause'    => $row["CHECK_CLAUSE"]
                 ];
                 if ($isFK) {
                     $constraints[$name]['referenced_table_schema'] = $row['REFERENCED_TABLE_SCHEMA'];
