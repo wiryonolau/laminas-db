@@ -14,8 +14,9 @@ if (php_sapi_name() === 'cli-server') {
     unset($path);
 }
 
-// Composer autoloading
-include __DIR__ . '/../vendor/autoload.php';
+
+// Composer autoloading, require composer ^2.2                                                                                                                                                
+include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
 $application = new \Symfony\Component\Console\Application();
 
