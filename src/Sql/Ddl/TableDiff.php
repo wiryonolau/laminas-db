@@ -117,7 +117,12 @@ class TableDiff
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
                     // Metadata combine table name with constraint name to differentiate
-                    $constraintName = $table->getName() . "_" . $constraint->getName();
+                    if ($constraint->getType() == "FOREIGN KEY") {
+                        $constraintName = $constraint->getName();
+                    } else {
+                        $constraintName = $table->getName() . "_" . $constraint->getName();
+                    }
+
                     if (isset($existingConstraints[$constraintName])) {
                         if (!$this->constraintHasUpdate(
                             $existingConstraints[$constraintName],
@@ -142,7 +147,11 @@ class TableDiff
                 foreach (array_keys($existingConstraints) as $name) {
                     $hasChange = true;
                     // Metadata combine table name with constraint name to differentiate, strip to remove
-                    $ddl->dropConstraint(preg_replace(sprintf("/^%s_/", $table->getName()), "", $name));
+                    if ($constraint->getType() == "FOREIGN KEY") {
+                        $ddl->dropConstraint($name);
+                    } else {
+                        $ddl->dropConstraint(preg_replace(sprintf("/^%s_/", $table->getName()), "", $name));
+                    }
                 }
             }
 
@@ -256,7 +265,10 @@ class TableDiff
             return true;
         }
 
-        if ($existing->getMatchOption() !== $update->getMatchOption()) {
+        if (
+            !empty($update->getMatchOption())
+            and $existing->getMatchOption() !== $update->getMatchOption()
+        ) {
             return true;
         }
 
