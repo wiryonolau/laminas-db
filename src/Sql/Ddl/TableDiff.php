@@ -116,12 +116,14 @@ class TableDiff
 
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
-                    if (isset($existingConstraints[$constraint->getName()])) {
+                    // Metadata combine table name with constraint name to differentiate
+                    $constraintName = $table->getName() . "_" . $constraint->getName();
+                    if (isset($existingConstraints[$constraintName])) {
                         if (!$this->constraintHasUpdate(
-                            $existingConstraints[$constraint->getName()],
+                            $existingConstraints[$constraintName],
                             $constraint
                         )) {
-                            unset($existingConstraints[$constraint->getName()]);
+                            unset($existingConstraints[$constraintName]);
                             continue;
                         }
 
@@ -130,18 +132,17 @@ class TableDiff
                         $dropDdl->dropConstraint($constraint->getName());
                         $ddls[] = $dropDdl;
                     }
-
                     $hasChange = true;
                     $ddl->addConstraint(
                         DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
                     );
-
                     unset($existingConstraints[$constraint->getName()]);
                 }
 
                 foreach (array_keys($existingConstraints) as $name) {
                     $hasChange = true;
-                    $ddl->dropConstraint($name);
+                    // Metadata combine table name with constraint name to differentiate, strip to remove
+                    $ddl->dropConstraint(preg_replace(sprintf("/^%s_/", $table->getName()), "", $name));
                 }
             }
 
@@ -166,15 +167,18 @@ class TableDiff
             return true;
         }
 
-        if ($existing->isNullable() !== $update->isNullable()) {
+        if ($existing->isNullable() != $update->isNullable()) {
             return true;
         }
 
-        if ($existing->getDataType() !== $update->getDataType()) {
+        if (DdlUtilities::getColumnType($existing, $this->platformName) != DdlUtilities::getColumnType($update, $this->platformName)) {
             return true;
         }
 
-        if ($existing->getCharacterMaximumLength() !== $update->getCharacterMaximumLength()) {
+        if (
+            !empty($update->getCharacterMaximumLength())
+            and $existing->getCharacterMaximumLength() != $update->getCharacterMaximumLength()
+        ) {
             return true;
         }
 
@@ -183,21 +187,29 @@ class TableDiff
         //     return true;
         // }
 
-        if ($existing->getNumericPrecision() !== $update->getNumericPrecision()) {
+        if (
+            !empty($update->getNumericPrecision()) and
+            $existing->getNumericPrecision() != $update->getNumericPrecision()
+        ) {
             return true;
         }
 
-        if ($existing->getNumericScale() !== $update->getNumericScale()) {
+        if (
+            !empty($update->getNumericScale()) and
+            $existing->getNumericScale() != $update->getNumericScale()
+        ) {
             return true;
         }
 
-        if ($existing->getNumericUnsigned() !== $update->getNumericUnsigned()) {
+        if (
+            !empty($update->getNumericUnsigned()) and
+            $existing->getNumericUnsigned() != $update->getNumericUnsigned()
+        ) {
             return true;
         }
 
         foreach ($existing->getErratas() as $key => $value) {
-            if ($update->getErrata($key) !== $value) {
-                debug(["errata", $key, $value, $update->getErrata($key)]);
+            if ($update->getErrata($key) != $value) {
                 return true;
             }
         }
