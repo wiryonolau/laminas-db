@@ -60,7 +60,11 @@ class TriggerDiff
         }
 
         if ($existingTrigger) {
-            // some db can replace, for now drop everything
+            if (!$this->triggerHasDiff($existingTrigger, $trigger)) {
+                return $ddls;
+            }
+
+            // some db can replace, for now safer to drop everything if different
             $ddls[] = new DropTrigger($existingTrigger->getName());
         }
 
@@ -82,5 +86,107 @@ class TriggerDiff
         }
 
         return $ddls;
+    }
+
+    protected function triggerHasDiff(
+        TriggerObject $existing,
+        TriggerObject $update
+    ) {
+        if (
+            !empty($update->getEventManipulation())
+            and $existing->getEventManipulation() != $update->getEventManipulation()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getEventObjectCatalog())
+            and $existing->getEventObjectCatalog() != $update->getEventObjectCatalog()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getEventObjectSchema())
+            and $existing->getEventObjectSchema() != $update->getEventObjectSchema()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getEventObjectTable())
+            and $existing->getEventObjectTable() != $update->getEventObjectTable()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionCondition())
+            and $existing->getActionCondition() != $update->getActionCondition()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionOrder())
+            and $existing->getActionOrder() != $update->getActionOrder()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionOrder())
+            and $existing->getActionOrder() != $update->getActionOrder()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionOrientation())
+            and $existing->getActionOrientation() != $update->getActionOrientation()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionReferenceNewRow())
+            and $existing->getActionReferenceNewRow() != $update->getActionReferenceNewRow()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionReferenceNewTable())
+            and $existing->getActionReferenceNewTable() != $update->getActionReferenceNewTable()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionReferenceOldRow())
+            and $existing->getActionReferenceOldRow() != $update->getActionReferenceOldRow()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionReferenceOldTable())
+            and $existing->getActionReferenceOldTable() != $update->getActionReferenceOldTable()
+        ) {
+            return true;
+        }
+
+        $existingActionStatement = md5(trim(preg_replace("/\s*/m", "", $existing->getActionStatement())));
+        $updateActionStatement = md5(trim(preg_replace("/\s*/m", "", $update->getActionStatement())));
+        if (!hash_equals($existingActionStatement, $updateActionStatement)) {
+            return true;
+        }
+
+        if (
+            !empty($update->getActionTiming())
+            and $existing->getActionTiming() != $update->getActionTiming()
+        ) {
+            return true;
+        }
     }
 }

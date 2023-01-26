@@ -4,17 +4,13 @@ namespace Itseasy\Database\Console\Command;
 
 use Exception;
 use Itseasy\Database\Metadata\Source\Factory;
-use Itseasy\Database\Sql\Ddl\SchemaDiff;
 use Laminas\Db\Adapter\Adapter;
-use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Adapter\Driver\Pdo\Pdo as LaminasPdo;
 use Laminas\Db\Sql\PreparableSqlInterface;
 use Laminas\Db\Sql\Sql;
-use Laminas\Db\Sql\SqlInterface;
 use Laminas\Log\LoggerAwareInterface;
 use Laminas\Log\LoggerAwareTrait;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -49,15 +45,14 @@ class DataCommand extends Command implements LoggerAwareInterface
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $data_file = realpath(APP_DIR.DIRECTORY_SEPARATOR.$input->getOption("file"));
+        $data_file = realpath(APP_DIR . DIRECTORY_SEPARATOR . $input->getOption("file"));
         $dsn = $input->getOption("dsn");
         $username = $input->getOption("username");
         $password = $input->getOption("password");
         $disableFk = $input->getOption("disable-fk", false);
         $useTransaction = $input->getOption("use-tx", false);
 
-        $this->createAdapter();
-
+        $this->createAdapter($dsn, $username, $password);
         $data = include $data_file;
 
         $platform = $this->adapter->getPlatform()->getName();

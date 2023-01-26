@@ -35,9 +35,7 @@ class PostgresqlCreateTrigger extends AbstractSql implements SqlInterface
         self::TRIGGER => <<<EOF
             CREATE OR REPLACE TRIGGER %1\$s
             %2\$s %3\$s ON %4\$s FOR EACH %5\$s
-            BEGIN
             %6\$s
-            END
         EOF
     ];
 

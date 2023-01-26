@@ -172,7 +172,10 @@ class TableDiff
         ColumnObject $existing,
         ColumnObject $update
     ): bool {
-        if ($existing->getColumnDefault() != $update->getColumnDefault()) {
+        if (
+            !empty($update->getColumnDefault())
+            and $existing->getColumnDefault() != $update->getColumnDefault()
+        ) {
             return true;
         }
 
@@ -234,30 +237,30 @@ class TableDiff
             return true;
         }
 
-        if ($existing->getSchemaName() !== $update->getSchemaName()) {
-            return true;
-        }
+        // if ($existing->getSchemaName() !== $update->getSchemaName()) {
+        //     return true;
+        // }
 
         if ($existing->getType() !== $update->getType()) {
             return true;
         }
 
-        $existingColumns = is_null($existing->getColumns()) ? [] : $existing->getColumns();
-        $updateColumns = is_null($update->getColumns()) ? [] : $update->getColumns();
+        $existingColumns = is_null($existing->getColumns()) ? [] : array_filter($existing->getColumns());
+        $updateColumns = is_null($update->getColumns()) ? [] : array_filter($update->getColumns());
         if (count(array_diff($existingColumns, $updateColumns))) {
             return true;
         }
 
-        if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
-            return true;
-        }
+        // if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
+        //     return true;
+        // }
 
         if ($existing->getReferencedTableName() !== $update->getReferencedTableName()) {
             return true;
         }
 
-        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : $existing->getReferencedColumns();
-        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : $update->getReferencedColumns();
+        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : array_filter($existing->getReferencedColumns());
+        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : array_filter($update->getReferencedColumns());
         if (count(array_diff(
             $existingReferenceColumns,
             $updateReferencesColumns

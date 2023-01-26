@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Laminas\Log\LoggerInterface;
+
 chdir(dirname(__DIR__));
 
 // Decline static file requests back to the PHP built-in webserver
@@ -26,7 +28,12 @@ $commands = [
     \Itseasy\Database\Console\Command\DataCommand::class
 ];
 
+$logger = new Laminas\Log\Logger();
+$logger->addWriter('stream', null, ['stream' => 'php://stderr']);
+
 foreach ($commands as $command) {
+    $commandObject = new $command();
+    $commandObject->setLogger($logger);
     $application->add(new $command());
 }
 
