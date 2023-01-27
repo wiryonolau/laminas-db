@@ -21,6 +21,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
 
     protected static $defaultName = "db:diff";
     protected $db;
+    protected $output;
 
     protected function configure(): void
     {
@@ -41,6 +42,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->output = $output;
         $schema_file = realpath(APP_DIR . DIRECTORY_SEPARATOR . $input->getOption("file"));
         $dsn = $input->getOption("dsn");
         $username = $input->getOption("username");
@@ -81,6 +83,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
                     $this->executeExpression("SET FOREIGN_KEY_CHECKS=1");
                     break;
                 case Factory::PLATFORM_POSTGRESQL:
+                    $output->writeln("COMMIT\n");
                     $this->adapter->getDriver()->getConnection()->commit();
                     break;
                 default:
@@ -92,6 +95,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
 
     protected function executeExpression(string $expression): void
     {
+        $this->output->writeln($expression . "\n");
         $stmt = $this->adapter->createStatement();
         $stmt->prepare($expression);
         $stmt->execute();
