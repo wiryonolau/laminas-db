@@ -8,9 +8,26 @@ use Itseasy\Database\Metadata\Object\RoutineObject;
 use Itseasy\Database\Metadata\Object\SequenceObject;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Source\PostgresqlMetadata as SourcePostgresqlMetadata;
+use Throwable;
 
 class PostgresqlMetadata extends SourcePostgresqlMetadata
 {
+    public function  __construct(Adapter $adapter)
+    {
+        parent::__construct($adapter);
+        try {
+            // Version is integer , e.g 100021 for postgres:10
+            // Compare directly using integer
+            $result = $this->adapter->query(
+                "SELECT setting as version FROM pg_settings WHERE name = 'server_version_num'",
+                Adapter::QUERY_MODE_EXECUTE
+            );
+            $this->version = $result->toArray()[0]["VERSION"];
+        } catch (Throwable $t) {
+            $this->version = 0;
+        }
+    }
+
     public function getMetadata(): array
     {
         return [

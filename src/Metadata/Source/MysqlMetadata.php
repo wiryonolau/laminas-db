@@ -10,9 +10,27 @@ use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Metadata\Source\MysqlMetadata as LaminasMysqlMetadata;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
+use Composer\Semver\Comparator;
+use Throwable;
 
 class MysqlMetadata extends LaminasMysqlMetadata
 {
+    protected $version;
+
+    public function  __construct(Adapter $adapter)
+    {
+        parent::__construct($adapter);
+        try {
+            $result = $this->adapter->query(
+                "SELECT VERSION() AS VERSION",
+                Adapter::QUERY_MODE_EXECUTE
+            );
+            $this->version = $result->toArray()[0]["VERSION"];
+        } catch (Throwable $t) {
+            $this->version = "0.0.0";
+        }
+    }
+
     public function getMetadata(): array
     {
         return [
@@ -245,8 +263,12 @@ class MysqlMetadata extends LaminasMysqlMetadata
             ['KCU', 'REFERENCED_TABLE_SCHEMA'],
             ['KCU', 'REFERENCED_TABLE_NAME'],
             ['KCU', 'REFERENCED_COLUMN_NAME'],
-            ['CC', 'CHECK_CLAUSE']
         ];
+
+        // For mysql 8 and mariadb 10
+        if (Comparator::greaterThanOrEqualTo($this->version, "8")) {
+            $isColumns[] = ['CC', 'CHECK_CLAUSE'];
+        }
 
         $p = $this->adapter->getPlatform();
 
@@ -275,19 +297,27 @@ class MysqlMetadata extends LaminasMysqlMetadata
             . ' ON ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_SCHEMA'])
             . '  = ' . $p->quoteIdentifierChain(['RC', 'CONSTRAINT_SCHEMA'])
             . ' AND ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_NAME'])
-            . '  = ' . $p->quoteIdentifierChain(['RC', 'CONSTRAINT_NAME'])
+            . '  = ' . $p->quoteIdentifierChain(['RC', 'CONSTRAINT_NAME']);
 
-            . ' LEFT JOIN ' . $p->quoteIdentifierChain(['INFORMATION_SCHEMA', 'CHECK_CONSTRAINTS']) . ' CC'
-            . ' ON ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_SCHEMA'])
-            . '  = ' . $p->quoteIdentifierChain(['CC', 'CONSTRAINT_SCHEMA'])
-            . ' AND ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_NAME'])
-            . '  = ' . $p->quoteIdentifierChain(['CC', 'CONSTRAINT_NAME'])
+        // For mysql 8 and mariadb 10
+        if (Comparator::greaterThanOrEqualTo($this->version, "8")) {
+            $sql .= ' LEFT JOIN ' . $p->quoteIdentifierChain(['INFORMATION_SCHEMA', 'CHECK_CONSTRAINTS']) . ' CC'
+                . ' ON ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_SCHEMA'])
+                . '  = ' . $p->quoteIdentifierChain(['CC', 'CONSTRAINT_SCHEMA'])
+                . ' AND ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_NAME'])
+                . '  = ' . $p->quoteIdentifierChain(['CC', 'CONSTRAINT_NAME']);
+        }
 
-            . ' WHERE ' . $p->quoteIdentifierChain(['T', 'TABLE_NAME'])
+        $sql .= ' WHERE ' . $p->quoteIdentifierChain(['T', 'TABLE_NAME'])
             . ' = ' . $p->quoteTrustedValue($table)
             . ' AND ' . $p->quoteIdentifierChain(['T', 'TABLE_TYPE'])
-            . ' IN (\'BASE TABLE\', \'VIEW\')'
-            . ' AND (' . $p->quoteIdentifierChain(['CC', 'LEVEL']) . ' IS NULL OR ' . $p->quoteIdentifierChain(['CC', 'LEVEL']) . ' = \'Table\')';
+            . ' IN (\'BASE TABLE\', \'VIEW\')';
+
+        // For mariadb only ( start at 10 )
+        if (Comparator::greaterThanOrEqualTo($this->version, "10")) {
+            $sql .= ' AND (' . $p->quoteIdentifierChain(['CC', 'LEVEL'])
+                . ' IS NULL OR ' . $p->quoteIdentifierChain(['CC', 'LEVEL']) . ' = \'Table\')';
+        }
 
         if ($schema !== self::DEFAULT_SCHEMA) {
             $sql .= ' AND ' . $p->quoteIdentifierChain(['T', 'TABLE_SCHEMA'])
@@ -325,7 +355,7 @@ class MysqlMetadata extends LaminasMysqlMetadata
                     'constraint_type' => $row['CONSTRAINT_TYPE'],
                     'table_name'      => $row['TABLE_NAME'],
                     'columns'         => [],
-                    'check_clause'    => $row["CHECK_CLAUSE"]
+                    'check_clause'    => isset($row["CHECK_CLAUSE"]) ? $row["CHECK_CLAUSE"] : null
                 ];
                 if ($isFK) {
                     $constraints[$name]['referenced_table_schema'] = $row['REFERENCED_TABLE_SCHEMA'];
