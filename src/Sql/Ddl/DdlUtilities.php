@@ -48,11 +48,15 @@ class DdlUtilities
             case "mediumblob":
             case "longblob":
                 return "Blob";
+            case "int":
+                return "Integer";
             case "smallint":
                 return "SmallInteger";
             case "bigint":
             case "biginteger":
                 return "BigInteger";
+            case "json":
+                return "Longtext";
             default:
                 return ucfirst($type);
         }
@@ -90,6 +94,7 @@ class DdlUtilities
                     return "SmallIdentity";
                 }
                 return "SmallInteger";
+            case "int":
             case "mediumint":
                 return "Integer";
             case "bigint":
@@ -104,6 +109,8 @@ class DdlUtilities
                     return "Identity";
                 }
                 return "Integer";
+            case "longtext":
+                return "Text";
             default:
                 return ucfirst($type);
         }
@@ -228,19 +235,27 @@ class DdlUtilities
             $options["unsigned"] = true;
         }
 
-        if ($columnObject->getErrata("auto_increment")) {
-            $options["auto_increment"] = true;
-        }
-
-        // Postgres new identity
-        if ($columnObject->getErrata("is_identity")) {
-            $options["is_identity"] = $columnObject->getErrata("is_identity");
-            $options["identity_generation"] = $columnObject->getErrata("identity_generation");
-            $options["identity_start"] = $columnObject->getErrata("identity_start");
-            $options["identity_increment"] = $columnObject->getErrata("identity_increment");
-            $options["identity_minimum"] = $columnObject->getErrata("identity_minimum");
-            $options["identity_maximum"] = $columnObject->getErrata("identity_maximum");
-            $options["identity_cycle"] = $columnObject->getErrata("identity_cycle");
+        // Specific platform 
+        switch ($platformName) {
+            case Factory::PLATFORM_MYSQL:
+                if (!is_null($columnObject->getErrata("auto_increment"))) {
+                    $options["auto_increment"] = true;
+                }
+                break;
+            case Factory::PLATFORM_POSTGRESQL:
+                if (!is_null($columnObject->getErrata("is_identity"))) {
+                    $options["is_identity"] = $columnObject->getErrata("is_identity");
+                    $options["identity_generation"] = $columnObject->getErrata("identity_generation");
+                    $options["identity_start"] = $columnObject->getErrata("identity_start");
+                    $options["identity_increment"] = $columnObject->getErrata("identity_increment");
+                    $options["identity_minimum"] = $columnObject->getErrata("identity_minimum");
+                    $options["identity_maximum"] = $columnObject->getErrata("identity_maximum");
+                    $options["identity_cycle"] = $columnObject->getErrata("identity_cycle");
+                }
+                break;
+            case Factory::PLATFORM_SQLITE:
+                break;
+            default:
         }
 
         $object->setOptions($options);

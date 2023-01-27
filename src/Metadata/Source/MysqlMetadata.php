@@ -286,7 +286,8 @@ class MysqlMetadata extends LaminasMysqlMetadata
             . ' WHERE ' . $p->quoteIdentifierChain(['T', 'TABLE_NAME'])
             . ' = ' . $p->quoteTrustedValue($table)
             . ' AND ' . $p->quoteIdentifierChain(['T', 'TABLE_TYPE'])
-            . ' IN (\'BASE TABLE\', \'VIEW\')';
+            . ' IN (\'BASE TABLE\', \'VIEW\')'
+            . ' AND (' . $p->quoteIdentifierChain(['CC', 'LEVEL']) . ' IS NULL OR ' . $p->quoteIdentifierChain(['CC', 'LEVEL']) . ' = \'Table\')';
 
         if ($schema !== self::DEFAULT_SCHEMA) {
             $sql .= ' AND ' . $p->quoteIdentifierChain(['T', 'TABLE_SCHEMA'])
@@ -304,6 +305,7 @@ class MysqlMetadata extends LaminasMysqlMetadata
 
             . ', ' . $p->quoteIdentifierChain(['TC', 'CONSTRAINT_NAME'])
             . ', ' . $p->quoteIdentifierChain(['KCU', 'ORDINAL_POSITION']);
+
 
         $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
 

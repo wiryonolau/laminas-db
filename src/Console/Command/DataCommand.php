@@ -25,6 +25,7 @@ class DataCommand extends Command implements LoggerAwareInterface
     protected static $defaultName = "db:data";
     protected $db;
     protected $adapter;
+    protected $output;
 
     protected function configure(): void
     {
@@ -45,6 +46,7 @@ class DataCommand extends Command implements LoggerAwareInterface
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->output = $output;
         $data_file = realpath(APP_DIR . DIRECTORY_SEPARATOR . $input->getOption("file"));
         $dsn = $input->getOption("dsn");
         $username = $input->getOption("username");
@@ -90,6 +92,7 @@ class DataCommand extends Command implements LoggerAwareInterface
                         $this->executeExpression("SET FOREIGN_KEY_CHECKS=1");
                         break;
                     case Factory::PLATFORM_POSTGRESQL:
+                        $output->writeln("COMMIT\n");
                         $this->adapter->getDriver()->getConnection()->commit();
                         break;
                     default:
@@ -106,21 +109,29 @@ class DataCommand extends Command implements LoggerAwareInterface
     {
         $sql = new Sql($this->adapter);
         foreach ($data as $query) {
-            if (is_callable($query)) {
-                $query = $query();
-            }
+            try {
+                if (is_callable($query)) {
+                    $query = $query();
+                }
 
-            if (!$query instanceof PreparableSqlInterface) {
-                throw new Exception("Invalid sql object");
-            }
 
-            $statement = $sql->prepareStatementForSqlObject($query);
-            $statement->execute();
+                if (!$query instanceof PreparableSqlInterface) {
+                    throw new Exception("Invalid sql object");
+                }
+
+                $statement = $sql->prepareStatementForSqlObject($query);
+                $this->output->writeln($statement->getSql());
+                $this->output->writeln(print_r($query->getRawState()["values"], true));
+                $statement->execute();
+            } catch (Throwable $t) {
+                $this->output->writeln(sprintf("<comment>%s</comment>\n", $t->getMessage()));
+            }
         }
     }
 
     protected function executeExpression(string $expression): void
     {
+        $this->output->writeln($expression . "\n");
         $stmt = $this->adapter->createStatement();
         $stmt->prepare($expression);
         $stmt->execute();
