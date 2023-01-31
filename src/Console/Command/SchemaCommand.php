@@ -76,7 +76,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
             $output->writeln(trim($ddl) . "\n");
 
             if ($apply) {
-                $adapter->query($ddl, Adapter::QUERY_MODE_EXECUTE);
+                $this->adapter->query($ddl, Adapter::QUERY_MODE_EXECUTE);
             }
         }
 
