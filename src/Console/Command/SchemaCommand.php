@@ -21,6 +21,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
 
     protected static $defaultName = "db:diff";
     protected $db;
+    protected $adapter;
     protected $output;
 
     protected function configure(): void
@@ -50,10 +51,12 @@ class SchemaCommand extends Command implements LoggerAwareInterface
         $apply = $input->getOption("apply");
         $disableFk = $input->getOption("disable-fk", false);
 
-        $adapter = $this->createAdapter($dsn, $username, $password);
+        $this->createAdapter($dsn, $username, $password);
         $schema = include $schema_file;
 
-        $ddls = SchemaDiff::diff($schema, $adapter);
+        $ddls = SchemaDiff::diff($schema, $this->adapter);
+
+        $platform = $this->adapter->getPlatform()->getName();
 
         if ($disableFk) {
             switch ($platform) {
@@ -105,14 +108,14 @@ class SchemaCommand extends Command implements LoggerAwareInterface
         ?string $dsn = null,
         ?string $username = null,
         ?string $password = null
-    ): AdapterInterface {
+    ): void {
         $driver_options = [
             PDO::ATTR_EMULATE_PREPARES => true,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ];
 
         if (is_null($dsn)) {
-            return new Adapter([
+            $this->adapter = new Adapter([
                 "driver" => getenv("DB_DRIVER"),
                 "hostname" => getenv("DB_HOSTNAME"),
                 "port" => getenv("DB_PORT"),
@@ -121,9 +124,9 @@ class SchemaCommand extends Command implements LoggerAwareInterface
                 "database" => getenv("DB_DATABASE"),
                 "driver_options" => $driver_options
             ]);
+        } else {
+            $pdo =  new PDO($dsn, $username, $password, $driver_options);
+            $this->adapter = new Adapter(new LaminasPdo($pdo));
         }
-
-        $pdo =  new PDO($dsn, $username, $password, $driver_options);
-        return new Adapter(new LaminasPdo($pdo));
     }
 }
