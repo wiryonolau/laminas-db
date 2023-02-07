@@ -38,11 +38,16 @@ class TableDiff
     /**
      * Check if difference exist in given table against existing table
      * 
+     * @param AbstractTableObject   $table                    New Table Definition
+     * @param AbstractTableObject   $existingTable            Old table definition, default retrieve from metadata
+     * @param bool                  $ignoreConstraintPrefix   Ignore adding table prefix to constraint name
+     * 
      * @return Ddl\SqlInterface[] | Ddl\SqlInterface
      */
     public function diff(
         AbstractTableObject $table,
-        ?AbstractTableObject $existingTable = null
+        ?AbstractTableObject $existingTable = null,
+        bool $ignoreConstraintPrefix = false
     ): array {
         $ddls = [];
 
@@ -116,10 +121,12 @@ class TableDiff
 
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
-                    // Metadata combine table name with constraint name to differentiate
-                    if ($constraint->getType() == "FOREIGN KEY") {
-                        $constraintName = $constraint->getName();
-                    } else {
+                    // Metadata combine table name with constraint name to differentiate constraint type
+                    $constraintName = $constraint->getName();
+                    if (
+                        !$constraint->getType() == "FOREIGN KEY"
+                        and !$ignoreConstraintPrefix
+                    ) {
                         $constraintName = $table->getName() . "_" . $constraint->getName();
                     }
 
