@@ -122,20 +122,22 @@ class TableDiff
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
                     // Metadata combine table name with constraint name to differentiate constraint type
-                    $constraintName = $constraint->getName();
+                    // All existingConstraintName use metadataConstraintName
+                    // All ddl use $constraint->getName()
+                    $metadataConstraintName = $constraint->getName();
                     if (
-                        !$constraint->getType() == "FOREIGN KEY"
-                        and !$ignoreConstraintPrefix
+                        $constraint->getType() != "FOREIGN KEY"
+                        and $ignoreConstraintPrefix == false
                     ) {
-                        $constraintName = $table->getName() . "_" . $constraint->getName();
+                        $metadataConstraintName = $table->getName() . "_" . $constraint->getName();
                     }
 
-                    if (isset($existingConstraints[$constraintName])) {
+                    if (isset($existingConstraints[$metadataConstraintName])) {
                         if (!$this->constraintHasUpdate(
-                            $existingConstraints[$constraintName],
+                            $existingConstraints[$metadataConstraintName],
                             $constraint
                         )) {
-                            unset($existingConstraints[$constraintName]);
+                            unset($existingConstraints[$metadataConstraintName]);
                             continue;
                         }
 
@@ -148,7 +150,8 @@ class TableDiff
                     $ddl->addConstraint(
                         DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
                     );
-                    unset($existingConstraints[$constraint->getName()]);
+
+                    unset($existingConstraints[$metadataConstraintName]);
                 }
 
                 foreach (array_keys($existingConstraints) as $name) {
