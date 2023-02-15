@@ -116,12 +116,12 @@ class SchemaCommand extends Command implements LoggerAwareInterface
 
         if (is_null($dsn)) {
             $this->adapter = new Adapter([
-                "driver" => getenv("DB_DRIVER"),
-                "hostname" => getenv("DB_HOSTNAME"),
-                "port" => getenv("DB_PORT"),
-                "username" => $username ?? getenv("DB_USERNAME"),
-                "password" => $password ?? getenv("DB_PASSWORD"),
-                "database" => getenv("DB_DATABASE"),
+                "driver" => get_env("DB_DRIVER", "PdoMysql"),
+                "hostname" => get_env("DB_HOSTNAME", "localhost"),
+                "port" => get_env("DB_PORT", 3306),
+                "username" => $username ?? get_env("DB_USERNAME", ""),
+                "password" => $password ?? get_docker_secret("DB_PASSWORD", get_env("DB_PASSWORD", ""), true),
+                "database" => get_env("DB_DATABASE", ""),
                 "driver_options" => $driver_options
             ]);
         } else {
