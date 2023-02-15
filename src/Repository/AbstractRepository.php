@@ -176,7 +176,7 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     }
 
     /**
-     * @return $model
+     * @return object
      */
     public function upsert(
         object $model,
@@ -191,7 +191,12 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
                 if (in_array($key, $exclude_attributes)) {
                     continue;
                 }
-                $attributes[$key] = $value;
+
+                if (is_bool($value)) {
+                    $attributes[$key] = intval($value);
+                } else {
+                    $attributes[$key] = $value;
+                }
             }
 
             // Always exclude identifier
