@@ -182,9 +182,11 @@ class TableDiff
         ColumnObject $existing,
         ColumnObject $update
     ): bool {
+        // Mysql / Mariadb save quote as value, remove it for correct diff
+        $existingColumnDefault = trim($existing->getColumnDefault(), '\'"');
         if (
             !empty($update->getColumnDefault())
-            and $existing->getColumnDefault() != $update->getColumnDefault()
+            and $existingColumnDefault != $update->getColumnDefault()
         ) {
             return true;
         }
@@ -193,13 +195,17 @@ class TableDiff
             return true;
         }
 
-        if (DdlUtilities::getColumnType($existing, $this->platformName) != DdlUtilities::getColumnType($update, $this->platformName)) {
+        if (
+            DdlUtilities::getColumnType($existing, $this->platformName)
+            != DdlUtilities::getColumnType($update, $this->platformName)
+        ) {
             return true;
         }
 
         if (
             !empty($update->getCharacterMaximumLength())
-            and $existing->getCharacterMaximumLength() != $update->getCharacterMaximumLength()
+            and $existing->getCharacterMaximumLength()
+            != $update->getCharacterMaximumLength()
         ) {
             return true;
         }
