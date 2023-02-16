@@ -2,7 +2,37 @@
 
 declare(strict_types=1);
 
-use Laminas\Log\LoggerInterface;
+function get_docker_secret($path, $default = "", bool $path_from_env = false)
+{
+    if ($path_from_env) {
+        $path = getenv($path);
+    }
+
+    if (is_string($path) === false) {
+        return $default;
+    }
+
+    if (file_exists($path) === false) {
+        return $default;
+    }
+
+    $secret = file_get_contents($path);
+    if ($secret === false) {
+        return $default;
+    }
+
+    return trim($secret);
+}
+
+function get_env(string $name, $default = "", bool $local_only = false)
+{
+    $env = getenv($name, $local_only);
+    if ($env === false || is_null($env)) {
+        $env = $default;
+    }
+
+    return $env;
+}
 
 chdir(dirname(__DIR__));
 
