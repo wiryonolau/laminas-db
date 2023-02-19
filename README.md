@@ -13,7 +13,7 @@ To use it put in the service_factory in service config
 return [
     "service" => [
         "abstract_factories" => [
-            Itseasy\Repository\RepositoryAbstractServiceFactory::class
+            Itseasy\Repository\Factory\RepositoryAbstractServiceFactory::class
         ]
     ]
 ]

@@ -2,22 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Itseasy\Repository;
+namespace Itseasy\Repository\Factory;
 
 use Psr\Container\ContainerInterface;
 use Itseasy\Repository\GenericRepository;
 use Itseasy\Database;
+use Laminas\ServiceManager\Factory\AbstractFactoryInterface;
 
 /**
  * For Laminas ServiceManager only
  */
-class RepositoryAbstractServiceFactory
+class RepositoryAbstractServiceFactory implements AbstractFactoryInterface
 {
     public const SERVICE_SUFFIX = 'Repository';
 
     public function __invoke(
         ContainerInterface $container,
-        $requestedName
+        $requestedName,
+        array $options = null
     ) {
         $namespace = explode("\\", $requestedName);
         $repository = preg_split('/(?=[A-Z])/', end($namespace), -1, PREG_SPLIT_NO_EMPTY);
