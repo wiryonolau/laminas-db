@@ -183,7 +183,7 @@ class TableDiff
         ColumnObject $update
     ): bool {
         // Mysql / Mariadb save quote as value, remove it for correct diff
-        $existingColumnDefault = $existing->getColumnDefault() ?? trim($existing->getColumnDefault(), '\'"');
+        $existingColumnDefault = (!empty($existing->getColumnDefault()) ? trim($existing->getColumnDefault(), '\'"') : "");
         if (
             !empty($update->getColumnDefault())
             and $existingColumnDefault != $update->getColumnDefault()
