@@ -8,8 +8,6 @@ use Laminas\Db\Sql\Ddl;
 use Itseasy\Database\Metadata\Source\Factory;
 use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
-use Laminas\Db\Metadata\Object\ColumnObject;
-use Laminas\Db\Metadata\Object\ConstraintObject;
 
 class TableDiff
 {
@@ -88,9 +86,10 @@ class TableDiff
                 if (
                     isset($existingColumns[$column->getName()])
                 ) {
-                    if (!$this->columnHasUpdate(
+                    if (!DdlUtilities::columnHasUpdate(
                         $existingColumns[$column->getName()],
-                        $column
+                        $column,
+                        $this->platformName
                     )) {
                         unset($existingColumns[$column->getName()]);
                         continue;
@@ -133,9 +132,10 @@ class TableDiff
                     }
 
                     if (isset($existingConstraints[$metadataConstraintName])) {
-                        if (!$this->constraintHasUpdate(
+                        if (!DdlUtilities::constraintHasUpdate(
                             $existingConstraints[$metadataConstraintName],
-                            $constraint
+                            $constraint,
+                            $this->platformName
                         )) {
                             unset($existingConstraints[$metadataConstraintName]);
                             continue;
@@ -143,7 +143,11 @@ class TableDiff
 
                         $hasChange = true;
                         $dropDdl  = new Ddl\AlterTable($table->getName());
-                        $dropDdl->dropConstraint($constraint->getName());
+                        $dropDdl = DdlUtilities::dropConstraint(
+                            $dropDdl,
+                            $table,
+                            $constraint
+                        );
                         $ddls[] = $dropDdl;
                     }
                     $hasChange = true;
@@ -154,14 +158,13 @@ class TableDiff
                     unset($existingConstraints[$metadataConstraintName]);
                 }
 
-                foreach (array_keys($existingConstraints) as $name) {
+                foreach ($existingConstraints as $existingConstraint) {
                     $hasChange = true;
-                    // Metadata combine table name with constraint name to differentiate, strip to remove
-                    if ($constraint->getType() == "FOREIGN KEY") {
-                        $ddl->dropConstraint($name);
-                    } else {
-                        $ddl->dropConstraint(preg_replace(sprintf("/^%s_/", $table->getName()), "", $name));
-                    }
+                    $ddl = DdlUtilities::dropConstraint(
+                        $ddl,
+                        $table,
+                        $existingConstraint
+                    );
                 }
             }
 
@@ -171,138 +174,5 @@ class TableDiff
         }
 
         return $ddls;
-    }
-
-    /**
-     * Compare column differences
-     * Each adapter might have unique requirement
-     * Each attribute might have unique requirement
-     */
-    protected function columnHasUpdate(
-        ColumnObject $existing,
-        ColumnObject $update
-    ): bool {
-        // Mysql / Mariadb save quote as value, remove it for correct diff
-        $existingColumnDefault = (!empty($existing->getColumnDefault()) ? trim($existing->getColumnDefault(), '\'"') : "");
-        if (
-            !empty($update->getColumnDefault())
-            and $existingColumnDefault != $update->getColumnDefault()
-        ) {
-            return true;
-        }
-
-        if ($existing->isNullable() != $update->isNullable()) {
-            return true;
-        }
-
-        if (
-            DdlUtilities::getColumnType($existing, $this->platformName)
-            != DdlUtilities::getColumnType($update, $this->platformName)
-        ) {
-            return true;
-        }
-
-        if (
-            !empty($update->getCharacterMaximumLength())
-            and $existing->getCharacterMaximumLength()
-            != $update->getCharacterMaximumLength()
-        ) {
-            return true;
-        }
-
-        // Don't check octet length, not sure what the value means
-        // if ($existing->getCharacterOctetLength() !== $update->getCharacterOctetLength()) {
-        //     return true;
-        // }
-
-        if (
-            !empty($update->getNumericPrecision()) and
-            $existing->getNumericPrecision() != $update->getNumericPrecision()
-        ) {
-            return true;
-        }
-
-        if (
-            !empty($update->getNumericScale()) and
-            $existing->getNumericScale() != $update->getNumericScale()
-        ) {
-            return true;
-        }
-
-        if (
-            !empty($update->getNumericUnsigned()) and
-            $existing->getNumericUnsigned() != $update->getNumericUnsigned()
-        ) {
-            return true;
-        }
-
-        foreach ($existing->getErratas() as $key => $value) {
-            if ($update->getErrata($key) != $value) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    protected function constraintHasUpdate(
-        ConstraintObject $existing,
-        ConstraintObject $update
-    ): bool {
-        if ($existing->getTableName() !== $update->getTableName()) {
-            return true;
-        }
-
-        // if ($existing->getSchemaName() !== $update->getSchemaName()) {
-        //     return true;
-        // }
-
-        if ($existing->getType() !== $update->getType()) {
-            return true;
-        }
-
-        $existingColumns = is_null($existing->getColumns()) ? [] : array_filter($existing->getColumns());
-        $updateColumns = is_null($update->getColumns()) ? [] : array_filter($update->getColumns());
-        if (count(array_diff($existingColumns, $updateColumns))) {
-            return true;
-        }
-
-        // if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
-        //     return true;
-        // }
-
-        if ($existing->getReferencedTableName() !== $update->getReferencedTableName()) {
-            return true;
-        }
-
-        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : array_filter($existing->getReferencedColumns());
-        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : array_filter($update->getReferencedColumns());
-        if (count(array_diff(
-            $existingReferenceColumns,
-            $updateReferencesColumns
-        ))) {
-            return true;
-        }
-
-        if (
-            !empty($update->getMatchOption())
-            and $existing->getMatchOption() !== $update->getMatchOption()
-        ) {
-            return true;
-        }
-
-        if ($existing->getUpdateRule() !== $update->getUpdateRule()) {
-            return true;
-        }
-
-        if ($existing->getDeleteRule() !== $update->getDeleteRule()) {
-            return true;
-        }
-
-        if ($existing->getCheckClause() !== $update->getCheckClause()) {
-            return true;
-        }
-
-        return false;
     }
 }

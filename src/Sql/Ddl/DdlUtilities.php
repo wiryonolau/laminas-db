@@ -302,4 +302,202 @@ class DdlUtilities
         }
         return $ddl;
     }
+
+    public static function constraintHasUpdate(
+        ConstraintObject $existing,
+        ConstraintObject $update,
+        string $platformName
+    ): bool {
+        if ($existing->getTableName() !== $update->getTableName()) {
+            return true;
+        }
+
+        // if ($existing->getSchemaName() !== $update->getSchemaName()) {
+        //     return true;
+        // }
+
+        if ($existing->getType() !== $update->getType()) {
+            return true;
+        }
+
+        $existingColumns = is_null($existing->getColumns()) ? [] : array_filter($existing->getColumns());
+        $updateColumns = is_null($update->getColumns()) ? [] : array_filter($update->getColumns());
+        if (count(array_diff($existingColumns, $updateColumns))) {
+            return true;
+        }
+
+        // if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
+        //     return true;
+        // }
+
+        if ($existing->getReferencedTableName() !== $update->getReferencedTableName()) {
+            return true;
+        }
+
+        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : array_filter($existing->getReferencedColumns());
+        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : array_filter($update->getReferencedColumns());
+        if (count(array_diff(
+            $existingReferenceColumns,
+            $updateReferencesColumns
+        ))) {
+            return true;
+        }
+
+        if (
+            !empty($update->getMatchOption())
+            and $existing->getMatchOption() !== $update->getMatchOption()
+        ) {
+            return true;
+        }
+
+        if ($existing->getUpdateRule() !== $update->getUpdateRule()) {
+            if (
+                $platformName == Factory::PLATFORM_MYSQL
+                and $update->getType() == "FOREIGN KEY"
+                and in_array($existing->getUpdateRule(), ["NO ACTION", "RESTRICT"])
+                and in_array($update->getUpdateRule(), ["NO ACTION", "RESTRICT"])
+            ) {
+                return false;
+            }
+            return true;
+        }
+
+        if ($existing->getDeleteRule() !== $update->getDeleteRule()) {
+            if (
+                $platformName == Factory::PLATFORM_MYSQL
+                and $update->getType() == "FOREIGN KEY"
+                and in_array($existing->getUpdateRule(), ["NO ACTION", "RESTRICT"])
+                and in_array($update->getUpdateRule(), ["NO ACTION", "RESTRICT"])
+            ) {
+                return false;
+            }
+            return true;
+        }
+
+        if ($existing->getCheckClause() !== $update->getCheckClause()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Compare column differences
+     * Each adapter might have unique requirement
+     * Each attribute might have unique requirement
+     */
+    public static function columnHasUpdate(
+        ColumnObject $existing,
+        ColumnObject $update,
+        string $platformName
+    ): bool {
+        // Mysql / Mariadb save quote as value, remove it for correct diff
+        if ($platformName == Factory::PLATFORM_MYSQL) {
+            $existingColumnDefault = (!empty($existing->getColumnDefault()) ? trim($existing->getColumnDefault(), '\'"') : "");
+        }
+
+        if (
+            !empty($update->getColumnDefault())
+            and $existingColumnDefault != $update->getColumnDefault()
+        ) {
+            return true;
+        }
+
+        if ($existing->isNullable() != $update->isNullable()) {
+            return true;
+        }
+
+        if (
+            self::getColumnType($existing, $platformName)
+            != self::getColumnType($update, $platformName)
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getCharacterMaximumLength())
+            and $existing->getCharacterMaximumLength()
+            != $update->getCharacterMaximumLength()
+        ) {
+            return true;
+        }
+
+        // Don't check octet length, not sure what the value means
+        // if ($existing->getCharacterOctetLength() !== $update->getCharacterOctetLength()) {
+        //     return true;
+        // }
+
+        if (
+            !empty($update->getNumericPrecision()) and
+            $existing->getNumericPrecision() != $update->getNumericPrecision()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getNumericScale()) and
+            $existing->getNumericScale() != $update->getNumericScale()
+        ) {
+            return true;
+        }
+
+        if (
+            !empty($update->getNumericUnsigned()) and
+            $existing->getNumericUnsigned() != $update->getNumericUnsigned()
+        ) {
+            return true;
+        }
+
+        foreach ($existing->getErratas() as $key => $value) {
+            if ($update->getErrata($key) != $value) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * For sanitize constraint name
+     * laminas db metadata add additional table name 
+     * when retrieving constraint name
+     */
+    public static function dropConstraint(
+        SqlInterface $ddl,
+        AbstractTableObject $table,
+        ConstraintObject $constraint
+    ): SqlInterface {
+        if (!method_exists($ddl, "dropConstraint")) {
+            throw new Exception("Ddl object must implement dropConstraint");
+        }
+
+        // Foreign key doesn't have prefix pass constraint name as is
+        if ($constraint->getType() == "FOREIGN KEY") {
+            $ddl->dropConstraint($constraint->getName());
+            return $ddl;
+        }
+
+        preg_match_all(
+            sprintf("/%s/", $table->getName()),
+            $constraint->getName(),
+            $matches
+        );
+
+        if (empty($matches) or count($matches[0]) == 1) {
+            // Probably not prefix added by laminas-db so pass constraint name as is
+            $ddl->dropConstraint($constraint->getName());
+        } else {
+            // Limit only first occurence
+            $ddl->dropConstraint(
+                preg_replace(
+                    sprintf("/^%s_/", $table->getName()),
+                    "",
+                    $constraint->getName(),
+                    1
+                )
+            );
+        }
+
+        return $ddl;
+    }
 }
