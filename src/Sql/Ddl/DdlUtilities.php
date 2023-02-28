@@ -3,7 +3,6 @@
 namespace Itseasy\Database\Sql\Ddl;
 
 use Exception;
-use Throwable;
 use Itseasy\Database\Metadata\Source\Factory;
 use Itseasy\Database\Sql\Ddl\Column\MysqlColumnInterface;
 use Itseasy\Database\Sql\Ddl\Column\PostgresColumnInterface;
@@ -16,7 +15,6 @@ use Laminas\Db\Sql\Ddl\Column\AbstractPrecisionColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractTimestampColumn;
 use Laminas\Db\Sql\Ddl\Column\Column;
 use Laminas\Db\Sql\Ddl\Column\ColumnInterface;
-use Laminas\Db\Sql\Ddl\Column\Integer;
 use Laminas\Db\Sql\Ddl\Constraint\Check;
 use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
 use Laminas\Db\Sql\Ddl\Constraint\ForeignKey;
@@ -269,9 +267,10 @@ class DdlUtilities
     ): ConstraintInterface {
         switch ($constraintObject->getType()) {
             case "PRIMARY KEY":
+                // Primary constraint name always primary
                 $ddl = new PrimaryKey(
                     $constraintObject->getColumns(),
-                    $constraintObject->getName()
+                    "PRIMARY"
                 );
                 break;
             case "UNIQUE":
@@ -306,15 +305,19 @@ class DdlUtilities
     public static function constraintHasUpdate(
         ConstraintObject $existing,
         ConstraintObject $update,
-        string $platformName
+        string $platformName,
+        bool $checkSchema = false
     ): bool {
         if ($existing->getTableName() !== $update->getTableName()) {
             return true;
         }
 
-        // if ($existing->getSchemaName() !== $update->getSchemaName()) {
-        //     return true;
-        // }
+        if (
+            $checkSchema
+            and $existing->getSchemaName() !== $update->getSchemaName()
+        ) {
+            return true;
+        }
 
         if ($existing->getType() !== $update->getType()) {
             return true;
@@ -326,9 +329,12 @@ class DdlUtilities
             return true;
         }
 
-        // if ($existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()) {
-        //     return true;
-        // }
+        if (
+            $checkSchema
+            and $existing->getReferencedTableSchema() !== $update->getReferencedTableSchema()
+        ) {
+            return true;
+        }
 
         if ($existing->getReferencedTableName() !== $update->getReferencedTableName()) {
             return true;
@@ -392,8 +398,9 @@ class DdlUtilities
         string $platformName
     ): bool {
         // Mysql / Mariadb save quote as value, remove it for correct diff
+        $existingColumnDefault = $existing->getColumnDefault();
         if ($platformName == Factory::PLATFORM_MYSQL) {
-            $existingColumnDefault = (!empty($existing->getColumnDefault()) ? trim($existing->getColumnDefault(), '\'"') : "");
+            $existingColumnDefault = (!empty($existingColumnDefault) ? trim($existingColumnDefault, '\'"') : "");
         }
 
         if (

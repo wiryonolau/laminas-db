@@ -15,7 +15,7 @@ class MysqlCreateTrigger extends AbstractSql implements SqlInterface
 
     // CREATE
     //  [DEFINER = user]
-    //  TRIGGER [IF NOT EXISTS] trigger_name
+    //  TRIGGER trigger_name
     //  trigger_time trigger_event
     //  ON tbl_name FOR EACH ROW
     //  [trigger_order]
@@ -23,7 +23,7 @@ class MysqlCreateTrigger extends AbstractSql implements SqlInterface
 
     protected $specifications = [
         self::TRIGGER => <<<EOF
-            CREATE DEFINER=CURRENT_USER TRIGGER IF NOT EXISTS %1\$s
+            CREATE DEFINER=CURRENT_USER TRIGGER %1\$s
             %2\$s %3\$s ON %4\$s FOR EACH %5\$s
             %6\$s
         EOF
