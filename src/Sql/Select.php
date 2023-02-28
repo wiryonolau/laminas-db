@@ -2,9 +2,6 @@
 
 namespace Itseasy\Database\Sql;
 
-use Laminas\Db\Adapter\Driver\DriverInterface;
-use Laminas\Db\Adapter\ParameterContainer;
-use Laminas\Db\Adapter\Platform\PlatformInterface;
 use Laminas\Db\Sql\Select as SqlSelect;
 
 class Select extends SqlSelect

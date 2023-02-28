@@ -15,13 +15,16 @@ class TriggerDiff
 {
     protected $metadata;
 
-    protected $driver;
+    protected $adapter;
 
     // array of table name
     protected $existingTriggerNames;
 
     protected $existingRoutineNames;
 
+    /**
+     * TriggerDiff doesn't use metadata, so driver name is retrieve from connection directly
+     */
     public function __construct(
         AdapterInterface $adapter,
         ?array $existingTriggerNames = [],
