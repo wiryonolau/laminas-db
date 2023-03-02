@@ -22,10 +22,15 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
                 "SELECT setting as version FROM pg_settings WHERE name = 'server_version_num'",
                 Adapter::QUERY_MODE_EXECUTE
             );
-            $this->version = $result->toArray()[0]["VERSION"];
+            $this->version = strval($result->toArray()[0]["VERSION"]);
         } catch (Throwable $t) {
-            $this->version = 0;
+            $this->version = "0.0.0";
         }
+    }
+
+    public function getVersion(): string
+    {
+        return $this->version;
     }
 
     public function getMetadata(): array

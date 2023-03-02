@@ -2,6 +2,7 @@
 
 namespace Itseasy\Database\Sql\Ddl;
 
+use Composer\Semver\Comparator;
 use Exception;
 use Itseasy\Database\Metadata\Source\Factory;
 use Itseasy\Database\Sql\Ddl\Column\MysqlColumnInterface;
@@ -10,6 +11,7 @@ use Itseasy\Database\Sql\Ddl\Column\SqliteColumnInterface;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ColumnObject;
 use Laminas\Db\Metadata\Object\ConstraintObject;
+use Laminas\Db\Sql\Ddl\AlterTable;
 use Laminas\Db\Sql\Ddl\Column\AbstractLengthColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractPrecisionColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractTimestampColumn;
@@ -265,12 +267,16 @@ class DdlUtilities
         ConstraintObject $constraintObject,
         string $platformName
     ): ConstraintInterface {
+        $constraintObject = self::filterConstraint(
+            $constraintObject
+        );
+
         switch ($constraintObject->getType()) {
             case "PRIMARY KEY":
                 // Primary constraint name always primary
                 $ddl = new PrimaryKey(
                     $constraintObject->getColumns(),
-                    "PRIMARY"
+                    $constraintObject->getName()
                 );
                 break;
             case "UNIQUE":
@@ -306,6 +312,7 @@ class DdlUtilities
         ConstraintObject $existing,
         ConstraintObject $update,
         string $platformName,
+        string $platformVersion = "0.0.0",
         bool $checkSchema = false
     ): bool {
         if ($existing->getTableName() !== $update->getTableName()) {
@@ -395,7 +402,8 @@ class DdlUtilities
     public static function columnHasUpdate(
         ColumnObject $existing,
         ColumnObject $update,
-        string $platformName
+        string $platformName,
+        string $platformVersion = "0.0.0"
     ): bool {
         // Mysql / Mariadb save quote as value, remove it for correct diff
         $existingColumnDefault = $existing->getColumnDefault();
@@ -464,47 +472,104 @@ class DdlUtilities
         return false;
     }
 
-    /**
-     * For sanitize constraint name
-     * laminas db metadata add additional table name 
-     * when retrieving constraint name
-     */
     public static function dropConstraint(
-        SqlInterface $ddl,
-        AbstractTableObject $table,
-        ConstraintObject $constraint
+        ConstraintObject $constraint,
+        ?SqlInterface $ddl = null,
+        ?string $platformName = null,
+        string $platformVersion = "0.0.0"
     ): SqlInterface {
+        if (is_null($ddl)) {
+            $ddl = new AlterTable($constraint->getTableName());
+        }
+
         if (!method_exists($ddl, "dropConstraint")) {
             throw new Exception("Ddl object must implement dropConstraint");
         }
 
+        // UNIQUE, INDEX, CHECK constraint
+        $constraint = self::filterConstraint($constraint);
+
         // Foreign key doesn't have prefix pass constraint name as is
         if ($constraint->getType() == "FOREIGN KEY") {
-            $ddl->dropConstraint($constraint->getName());
+            if (
+                $platformName == Factory::PLATFORM_MYSQL
+                and Comparator::lessThan($platformVersion, "8")
+            ) {
+                $ddl = new DropForeignKey(
+                    $constraint->getTableName(),
+                    $constraint->getName()
+                );
+            } else {
+                $ddl->dropConstraint($constraint->getName());
+            }
             return $ddl;
         }
 
+        // Primary key constraint name always PRIMARY
+        if ($constraint->getType() == "PRIMARY KEY") {
+            if (
+                $platformName == Factory::PLATFORM_MYSQL
+                and Comparator::lessThan($platformVersion, "8")
+            ) {
+                $ddl = new DropPrimaryKey(
+                    $constraint->getTableName()
+                );
+            } else {
+                $ddl->dropConstraint("PRIMARY");
+            }
+            return $ddl;
+        }
+
+        if (
+            $platformName == Factory::PLATFORM_MYSQL
+            and Comparator::lessThan($platformVersion, "8")
+        ) {
+            $ddl = new DropIndex(
+                $constraint->getTableName(),
+                $constraint->getName()
+            );
+        } else {
+            $ddl->dropConstraint($constraint->getName());
+        }
+
+        return $ddl;
+    }
+
+    /**
+     * Apply filter to constraint object
+     * - Remove table prefix from constraint name
+     */
+    public static function filterConstraint(
+        ConstraintObject $constraint
+    ): ConstraintObject {
+        if ($constraint->getType() == "FOREIGN KEY") {
+            return $constraint;
+        }
+
+        if ($constraint->getType() == "PRIMARY KEY") {
+            $constraint->setName("PRIMARY");
+            return $constraint;
+        }
+
         preg_match_all(
-            sprintf("/%s/", $table->getName()),
+            sprintf("/%s_/", $constraint->getTableName()),
             $constraint->getName(),
             $matches
         );
 
         if (empty($matches) or count($matches[0]) == 1) {
             // Probably not prefix added by laminas-db so pass constraint name as is
-            $ddl->dropConstraint($constraint->getName());
-        } else {
-            // Limit only first occurence
-            $ddl->dropConstraint(
-                preg_replace(
-                    sprintf("/^%s_/", $table->getName()),
-                    "",
-                    $constraint->getName(),
-                    1
-                )
-            );
+            return $constraint;
         }
 
-        return $ddl;
+        // Remove first prefix occurence
+        $constraint->setName(preg_replace(
+            sprintf("/^%s_/", $constraint->getTableName()),
+            "",
+            $constraint->getName(),
+            1
+        ));
+
+        return $constraint;
     }
 }
