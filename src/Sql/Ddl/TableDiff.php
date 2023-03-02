@@ -8,12 +8,14 @@ use Laminas\Db\Sql\Ddl;
 use Itseasy\Database\Metadata\Source\Factory;
 use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
+use Composer\Semver\Comparator;
 
 class TableDiff
 {
     protected $adapter;
     protected $metadata;
     protected $platformName;
+    protected $platformVersion;
 
     // array of table name
     protected $existingTableNames;
@@ -25,6 +27,11 @@ class TableDiff
         $this->adapter = $adapter;
         $this->platformName = $this->adapter->getPlatform()->getName();
         $this->metadata = Factory::createSourceFromAdapter($this->adapter);
+        $this->platformVersion = "0.0.0";
+
+        if (method_exists($this->metadata, "getVersion")) {
+            $this->platformVersion = $this->metadata->getVersion();
+        }
 
         if (empty($existingTableNames)) {
             $this->existingTableNames = $this->metadata->getTableNames();
@@ -35,6 +42,7 @@ class TableDiff
 
     /**
      * Check if difference exist in given table against existing table
+     * If table definition is created from metadata make sure to ignoreConstraintPrefix
      * 
      * @param AbstractTableObject   $table                    New Table Definition
      * @param AbstractTableObject   $existingTable            Old table definition, default retrieve from metadata
@@ -44,8 +52,7 @@ class TableDiff
      */
     public function diff(
         AbstractTableObject $table,
-        ?AbstractTableObject $existingTable = null,
-        bool $ignoreConstraintPrefix = false
+        ?AbstractTableObject $existingTable = null
     ): array {
         $ddls = [];
 
@@ -62,10 +69,7 @@ class TableDiff
 
         if (!$existingTable) {
             $ddls[] = DdlUtilities::tableObjectToDdl($table, $this->platformName);
-        }
-
-
-        if ($existingTable) {
+        } else {
             $existingColumns = [];
             $existingConstraints = [];
 
@@ -79,6 +83,10 @@ class TableDiff
 
             // Index existing constraint
             foreach ($existingTable->getConstraints() as $constraint) {
+                // $existingConstraints[$constraint->getName()] = $constraint;
+                $constraint = DdlUtilities::filterConstraint(
+                    $constraint
+                );
                 $existingConstraints[$constraint->getName()] = $constraint;
             }
 
@@ -89,7 +97,8 @@ class TableDiff
                     if (!DdlUtilities::columnHasUpdate(
                         $existingColumns[$column->getName()],
                         $column,
-                        $this->platformName
+                        $this->platformName,
+                        $this->platformVersion
                     )) {
                         unset($existingColumns[$column->getName()]);
                         continue;
@@ -120,51 +129,56 @@ class TableDiff
 
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
-                    // Metadata combine table name with constraint name to differentiate constraint type
-                    // All existingConstraintName use metadataConstraintName
-                    // All ddl use $constraint->getName()
-                    $metadataConstraintName = $constraint->getName();
-                    if (
-                        $constraint->getType() != "FOREIGN KEY"
-                        and $ignoreConstraintPrefix == false
-                    ) {
-                        $metadataConstraintName = $table->getName() . "_" . $constraint->getName();
-                    }
+                    $constraint = DdlUtilities::filterConstraint(
+                        $constraint
+                    );
 
-                    if (isset($existingConstraints[$metadataConstraintName])) {
+                    if (isset($existingConstraints[$constraint->getName()])) {
                         if (!DdlUtilities::constraintHasUpdate(
-                            $existingConstraints[$metadataConstraintName],
+                            $existingConstraints[$constraint->getName()],
                             $constraint,
-                            $this->platformName
+                            $this->platformName,
+                            $this->platformVersion
                         )) {
-                            unset($existingConstraints[$metadataConstraintName]);
+                            unset($existingConstraints[$constraint->getName()]);
                             continue;
                         }
 
                         $hasChange = true;
-                        $dropDdl  = new Ddl\AlterTable($table->getName());
-                        $dropDdl = DdlUtilities::dropConstraint(
-                            $dropDdl,
-                            $table,
-                            $constraint
+
+                        $ddls[] = DdlUtilities::dropConstraint(
+                            $constraint,
+                            null,
+                            $this->platformName,
+                            $this->platformVersion
                         );
-                        $ddls[] = $dropDdl;
                     }
+
                     $hasChange = true;
                     $ddl->addConstraint(
                         DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
                     );
 
-                    unset($existingConstraints[$metadataConstraintName]);
+                    unset($existingConstraints[$constraint->getName()]);
                 }
+            }
 
-                foreach ($existingConstraints as $existingConstraint) {
-                    $hasChange = true;
-                    $ddl = DdlUtilities::dropConstraint(
-                        $ddl,
-                        $table,
-                        $existingConstraint
-                    );
+            // Remove rest of existingConstraints
+            foreach ($existingConstraints as $existingConstraint) {
+                $hasChange = true;
+
+                $dropConstraint = DdlUtilities::dropConstraint(
+                    $existingConstraint,
+                    $ddl,
+                    $this->platformName,
+                    $this->platformVersion
+                );
+
+                // returned ddl might be special ddl due to platform version
+                if ($dropConstraint instanceof Ddl\AlterTable) {
+                    $ddl = $dropConstraint;
+                } else {
+                    $ddls[] = $dropConstraint;
                 }
             }
 

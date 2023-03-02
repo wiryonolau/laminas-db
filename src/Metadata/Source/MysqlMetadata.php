@@ -31,6 +31,11 @@ class MysqlMetadata extends LaminasMysqlMetadata
         }
     }
 
+    public function getVersion(): string
+    {
+        return $this->version;
+    }
+
     public function getMetadata(): array
     {
         return [
