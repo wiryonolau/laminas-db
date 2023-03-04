@@ -521,4 +521,28 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
 
         $this->data['indexes'][$schema] = $data;
     }
+
+    /**
+     * Update empty string, false, "NULL" string as null
+     * @param  null|bool|float|int|string $value
+     * @return null|mixed
+     */
+    protected function filterNullValue($value)
+    {
+        if (is_null($value)) {
+            return $value;
+        }
+
+        $value = trim(strval($value));
+
+        if (empty($value)) {
+            return null;
+        }
+
+        if (strtolower($value) == "null") {
+            return null;
+        }
+
+        return $value;
+    }
 }

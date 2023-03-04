@@ -233,13 +233,13 @@ class MysqlMetadata extends LaminasMysqlMetadata
 
             $columns[$row['COLUMN_NAME']] = [
                 'ordinal_position'         => $row['ORDINAL_POSITION'],
-                'column_default'           => $row['COLUMN_DEFAULT'],
+                'column_default'           => $this->filterNullValue($row['COLUMN_DEFAULT']),
                 'is_nullable'              => 'YES' === $row['IS_NULLABLE'],
                 'data_type'                => $row['DATA_TYPE'],
                 'character_maximum_length' => $row['CHARACTER_MAXIMUM_LENGTH'],
                 'character_octet_length'   => $row['CHARACTER_OCTET_LENGTH'],
-                'numeric_precision'        => $row['NUMERIC_PRECISION'],
-                'numeric_scale'            => $row['NUMERIC_SCALE'],
+                'numeric_precision'        => $this->filterNullValue($row['NUMERIC_PRECISION']),
+                'numeric_scale'            => $this->filterNullValue($row['NUMERIC_SCALE']),
                 'numeric_unsigned'         => false !== strpos($row['COLUMN_TYPE'], 'unsigned'),
                 'erratas'                  => $erratas,
             ];
@@ -585,5 +585,29 @@ class MysqlMetadata extends LaminasMysqlMetadata
         }
 
         $this->data['indexes'][$schema] = $data;
+    }
+
+    /**
+     * Update empty string, false, "NULL" string as null
+     * @param  null|bool|float|int|string $value
+     * @return null|mixed
+     */
+    protected function filterNullValue($value)
+    {
+        if (is_null($value)) {
+            return $value;
+        }
+
+        $value = trim(strval($value));
+
+        if (empty($value)) {
+            return null;
+        }
+
+        if (strtolower($value) == "null") {
+            return null;
+        }
+
+        return $value;
     }
 }
