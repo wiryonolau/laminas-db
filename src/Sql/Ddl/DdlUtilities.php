@@ -239,7 +239,7 @@ class DdlUtilities
         switch ($platformName) {
             case Factory::PLATFORM_MYSQL:
                 if (!is_null($columnObject->getErrata("auto_increment"))) {
-                    $options["auto_increment"] = true;
+                    $options["auto_increment"] = $columnObject->getErrata("auto_increment");
                 }
                 break;
             case Factory::PLATFORM_POSTGRESQL:

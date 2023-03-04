@@ -21,7 +21,7 @@ final class HydratorTest extends TestCase
     {
         $hydrator = new ColumnObjectHydrator();
         $obj = $hydrator->hydrate([
-            "errata" => [
+            "erratas" => [
                 "auto_increment" => true
             ]
         ], new ColumnObject("test", "test"));
