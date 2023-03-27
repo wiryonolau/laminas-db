@@ -6,16 +6,26 @@ namespace Itseasy\Repository;
 
 use Exception;
 use Itseasy\Database\Database;
+use Itseasy\Database\Result;
 use Itseasy\Database\Sql\Filter\SqlFilterAwareInterface;
 use Itseasy\Database\ResultInterface;
 use Itseasy\Database\Sql\Filter\SqlFilterAwareTrait;
 use Laminas\Db\Adapter\Driver\AbstractConnection;
 use Laminas\Db\Sql;
 use Laminas\Db\Sql\Predicate\Expression;
+use Laminas\EventManager\EventManagerAwareInterface;
+use Laminas\EventManager\EventManagerAwareTrait;
+use Laminas\Log\LoggerAwareInterface;
+use Laminas\Log\LoggerAwareTrait;
 
-abstract class AbstractRepository implements SqlFilterAwareInterface
+abstract class AbstractRepository implements
+    SqlFilterAwareInterface,
+    LoggerAwareInterface,
+    EventManagerAwareInterface
 {
     use SqlFilterAwareTrait;
+    use EventManagerAwareTrait;
+    use LoggerAwareTrait;
 
     protected $db;
     protected $table;
@@ -40,12 +50,31 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
         string $identifier = "id",
         $objectPrototype = null
     ) {
+        $this->getEventManager()->trigger(
+            "repository.select.pre",
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
         $select = new Sql\Select($this->table);
         $select->where([
             $identifier => $value
         ]);
 
         $result = $this->db->execute($select);
+
+        $this->getEventManager()->trigger(
+            "repository.select.post",
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args(),
+                "success" => $result->isError()
+            ]
+        );
 
         if (is_null($objectPrototype)) {
             return $result;
@@ -65,6 +94,15 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
         $resultSetObjectPrototype = null,
         $objectPrototype = null
     ) {
+        $this->getEventManager()->trigger(
+            'repository.select.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
         $select = new Sql\Select($this->table);
         $select->where($where);
 
@@ -82,6 +120,16 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
 
         $result = $this->db->execute($select);
 
+        $this->getEventManager()->trigger(
+            'repository.select.post',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args(),
+                "success" => $result->isError()
+            ]
+        );
+
         if (is_null($resultSetObjectPrototype) and is_null($objectPrototype)) {
             return $result;
         }
@@ -92,6 +140,17 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     public function getRowCount(
         array $where = []
     ): int {
+        $this->getEventManager()->trigger(
+            'repository.select.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
+        $result = new Result();
+
         try {
             $select = new Sql\Select($this->table);
             $select->columns(["num" => new Expression("COUNT(*)")]);
@@ -102,6 +161,16 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
             return intval($result->getSingleValue());
         } catch (Exception $e) {
             return 0;
+        } finally {
+            $this->getEventManager()->trigger(
+                'repository.select.post',
+                null,
+                [
+                    "function" => __FUNCTION__,
+                    "arguments" => func_get_args(),
+                    "success" => $result->isError()
+                ]
+            );
         }
     }
 
@@ -116,6 +185,15 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
         $resultSetObjectPrototype = null,
         $objectPrototype = null
     ) {
+        $this->getEventManager()->trigger(
+            'repository.select.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
         $select = new Sql\Select($this->table);
 
         $select = $this->applyFilter($select, $filters, $this->getFilterCombination());
@@ -134,6 +212,16 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
 
         $result = $this->db->execute($select);
 
+        $this->getEventManager()->trigger(
+            'repository.select.post',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args(),
+                "success" => $result->isError()
+            ]
+        );
+
         if (is_null($resultSetObjectPrototype) and is_null($objectPrototype)) {
             return $result;
         }
@@ -144,27 +232,97 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
     public function getFilterAwareRowCount(
         string $filters = ""
     ): int {
+        $this->getEventManager()->trigger(
+            'repository.select.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
+        $result = new Result();
+
         try {
             $select = new Sql\Select($this->table);
             $select->columns(["num" => new Expression("COUNT(*)")]);
             $select = $this->applyFilter($select, $filters, $this->getFilterCombination());
             $result = $this->db->execute($select);
 
+            if ($result->isError()) {
+                throw new Exception(sprintf("Unable to Retrieve Record"));
+            }
+
             return intval($result->getSingleValue());
         } catch (Exception $e) {
             return 0;
+        } finally {
+            $this->getEventManager()->trigger(
+                'repository.select.post',
+                null,
+                [
+                    "function" => __FUNCTION__,
+                    "arguments" => func_get_args(),
+                    "success" => $result->isError()
+                ]
+            );
         }
     }
 
     public function delete(array $where = []): ResultInterface
     {
+        $this->getEventManager()->trigger(
+            'repository.delete.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
+
         $delete = new Sql\Delete($this->table);
         $delete->where($where);
-        return $this->db->execute($delete);
+
+        $result = new Result();
+
+        $this->db->beginTransaction();
+        try {
+            $result = $this->db->execute($delete);
+            if ($result->isError()) {
+                throw new Exception(sprintf("Unable to Delete Record"));
+            }
+
+            $this->commit();
+            return $result;
+        } catch (Exception $e) {
+            $this->rollback();
+            return $result;
+        } finally {
+            $this->getEventManager()->trigger(
+                'repository.delete.post',
+                null,
+                [
+                    "function" => __FUNCTION__,
+                    "arguments" => func_get_args(),
+                    "success" => $result->isSuccess()
+                ]
+            );
+        }
     }
 
     public function filterAwareDelete(string $filters = ""): ResultInterface
     {
+        $this->getEventManager()->trigger(
+            'repository.delete.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args()
+            ]
+        );
+
+
         $delete = new Sql\Delete($this->table);
         $delete = $this->applyFilter(
             $delete,
@@ -172,7 +330,30 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
             $this->getFilterCombination()
         );
 
-        return $this->db->execute($delete);
+        $result = new Result();
+
+        $this->db->beginTransaction();
+        try {
+            $result = $this->db->execute($delete);
+
+            if ($result->isError()) {
+                throw new Exception(sprintf("Unable to Delete Record"));
+            }
+            $this->commit();
+        } catch (Exception $e) {
+            $this->rollback();
+            return $result;
+        } finally {
+            $this->getEventManager()->trigger(
+                'repository.delete.post',
+                null,
+                [
+                    "function" => __FUNCTION__,
+                    "arguments" => func_get_args(),
+                    "success" => $result->isSuccess()
+                ]
+            );
+        }
     }
 
     /**
@@ -183,6 +364,17 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
         string $identifier = "id",
         array $exclude_attributes = []
     ) {
+        $this->getEventManager()->trigger(
+            'repository.upsert.pre',
+            null,
+            [
+                "function" => __FUNCTION__,
+                "arguments" => func_get_args(),
+            ]
+        );
+
+        $success = true;
+
         $this->db->beginTransaction();
 
         try {
@@ -228,13 +420,25 @@ abstract class AbstractRepository implements SqlFilterAwareInterface
 
                 $id = $insertResult->getGeneratedValue();
             }
+
             $this->db->commit();
 
             $select = $this->getRowByIdentifier($id, $identifier);
             return $select->getFirstRow($model);
         } catch (Exception $e) {
             $this->db->rollback();
+            $success = false;
             return new $model();
+        } finally {
+            $this->getEventManager()->trigger(
+                'repository.upsert.post',
+                null,
+                [
+                    "function" => __FUNCTION__,
+                    "arguments" => func_get_args(),
+                    "success" => $success
+                ]
+            );
         }
     }
 

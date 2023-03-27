@@ -40,7 +40,7 @@ unittest-pg:
        	echo "Awaiting port postgres10 to be ready" ; \
        	sleep 1; \
 	done
-	sleep 5
+	sleep 10
 	docker run --rm -it \
         -v $$(pwd):/srv/${PROJECT_NAME} \
 		-w /srv/${PROJECT_NAME} \
@@ -64,7 +64,7 @@ unittest-mariadb:
        	echo "Awaiting port mariadb10 to be ready" ; \
        	sleep 1; \
 	done
-	sleep 5
+	sleep 10
 	docker run --rm -it \
         -v $$(pwd):/srv/${PROJECT_NAME} \
 		-w /srv/${PROJECT_NAME} \
@@ -100,7 +100,7 @@ unittest-mysql:
        	echo "Awaiting port mysql80 to be ready" ; \
        	sleep 1; \
 	done
-	sleep 5
+	sleep 10
 	docker run --rm -it \
 	    -v $$(pwd):/srv/${PROJECT_NAME} \
 		-w /srv/${PROJECT_NAME} \
