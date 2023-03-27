@@ -14,19 +14,19 @@
     ],
     "config": {
         "platform": {
-            "php": "7.4.30",
+            "php": "8.1.11",
             "ext-intl": "1"
         }
     },
     "require": {
-        "php": "^7.4",
+        "php": "^7.4 || ^8.0 || ^8.1",
         "laminas/laminas-db": "^2.13",
-        "laminas/laminas-hydrator": "^4.3",
+        "laminas/laminas-hydrator": "^4.8",
         "laminas/laminas-log": "^2.15",
-        "itseasy/util": "^1.0",
-        "symfony/console": "^5.4",
+        "itseasy/util": "^1.1",
+        "symfony/console": "^6.2",
         "composer/semver": "^3.3",
-        "laminas/laminas-eventmanager": "^3.5"
+        "laminas/laminas-eventmanager": "^3.10"
     },
     "autoload": {
         "psr-4": {
