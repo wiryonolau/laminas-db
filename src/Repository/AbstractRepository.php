@@ -55,7 +55,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -71,6 +73,7 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
+                "table" => $this->table,
                 "arguments" => func_get_args(),
                 "success" => $result->isError()
             ]
@@ -99,7 +102,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -125,6 +130,7 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
+                "table" => $this->table,
                 "arguments" => func_get_args(),
                 "success" => $result->isError()
             ]
@@ -145,7 +151,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -167,6 +175,7 @@ abstract class AbstractRepository implements
                 null,
                 [
                     "function" => __FUNCTION__,
+                    "table" => $this->table,
                     "arguments" => func_get_args(),
                     "success" => $result->isError()
                 ]
@@ -190,7 +199,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -217,6 +228,7 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
+                "table" => $this->table,
                 "arguments" => func_get_args(),
                 "success" => $result->isError()
             ]
@@ -237,7 +249,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -262,6 +276,7 @@ abstract class AbstractRepository implements
                 null,
                 [
                     "function" => __FUNCTION__,
+                    "table" => $this->table,
                     "arguments" => func_get_args(),
                     "success" => $result->isError()
                 ]
@@ -276,7 +291,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -304,6 +321,7 @@ abstract class AbstractRepository implements
                 null,
                 [
                     "function" => __FUNCTION__,
+                    "table" => $this->table,
                     "arguments" => func_get_args(),
                     "success" => $result->isSuccess()
                 ]
@@ -318,7 +336,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
-                "arguments" => func_get_args()
+                "table" => $this->table,
+                "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -349,6 +369,7 @@ abstract class AbstractRepository implements
                 null,
                 [
                     "function" => __FUNCTION__,
+                    "table" => $this->table,
                     "arguments" => func_get_args(),
                     "success" => $result->isSuccess()
                 ]
@@ -369,7 +390,9 @@ abstract class AbstractRepository implements
             null,
             [
                 "function" => __FUNCTION__,
+                "table" => $this->table,
                 "arguments" => func_get_args(),
+                "success" => null
             ]
         );
 
@@ -435,6 +458,7 @@ abstract class AbstractRepository implements
                 null,
                 [
                     "function" => __FUNCTION__,
+                    "table" => $this->table,
                     "arguments" => func_get_args(),
                     "success" => $success
                 ]
