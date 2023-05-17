@@ -18,6 +18,7 @@ class Result implements ItseasyResultInterface
     protected $errors = [];
     protected $resultSet;
     protected $lastGeneratedValue;
+    protected $affectedRows = 0;
     protected $resultSetObjectPrototype;
 
     public function __construct(
@@ -82,6 +83,7 @@ class Result implements ItseasyResultInterface
             $this->resultSet->initialize($rowset);
         }
         $this->setGeneratedValue(intval($result->getGeneratedValue()));
+        $this->setAffectedRows(intval($result->getAffectedRows()));
     }
 
     public function addError($error): void
@@ -192,6 +194,16 @@ class Result implements ItseasyResultInterface
             $this->resultSet->next();
         }
         return $resultSetObjectPrototype;
+    }
+
+    public function setAffectedRows(int $value): void
+    {
+        $this->affectedRows = $value;
+    }
+
+    public function getAffectedRows(): int
+    {
+        return $this->affectedRows;
     }
 
     public function getErrors(): array
