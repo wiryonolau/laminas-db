@@ -284,8 +284,10 @@ abstract class AbstractRepository implements
         }
     }
 
-    public function delete(array $where = []): ResultInterface
-    {
+    public function delete(
+        array $where = [],
+        bool $check_deleted = false
+    ): ResultInterface {
         $this->getEventManager()->trigger(
             'repository.delete.pre',
             null,
@@ -310,6 +312,15 @@ abstract class AbstractRepository implements
                 throw new Exception(sprintf("Unable to Delete Record"));
             }
 
+            if ($check_deleted) {
+                $select = new Sql\Select($this->table);
+                $select->where($where);
+                $check = $this->db->execute($select);
+                if (!$check->isEmpty()) {
+                    throw new Exception("Unable to Delete Record");
+                }
+            }
+
             $this->commit();
             return $result;
         } catch (Exception $e) {
@@ -329,8 +340,10 @@ abstract class AbstractRepository implements
         }
     }
 
-    public function filterAwareDelete(string $filters = ""): ResultInterface
-    {
+    public function filterAwareDelete(
+        string $filters = "",
+        bool $check_deleted = false
+    ): ResultInterface {
         $this->getEventManager()->trigger(
             'repository.delete.pre',
             null,
@@ -359,7 +372,22 @@ abstract class AbstractRepository implements
             if ($result->isError()) {
                 throw new Exception(sprintf("Unable to Delete Record"));
             }
+
+            if ($check_deleted) {
+                $select = new Sql\Select($this->table);
+                $select = $this->applyFilter(
+                    $select,
+                    $filters,
+                    $this->getFilterCombination()
+                );
+                $check = $this->db->execute($select);
+                if (!$check->isEmpty()) {
+                    throw new Exception("Unable to Delete Record");
+                }
+            }
+
             $this->commit();
+            return $result;
         } catch (Exception $e) {
             $this->rollback();
             return $result;
