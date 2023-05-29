@@ -123,7 +123,12 @@ class SchemaDiff
                 if (is_callable($column)) {
                     $column = $column();
                     if (!$column instanceof ColumnObject) {
-                        throw new Exception("Invalid column object");
+                        throw new Exception(
+                            sprintf(
+                                "Invalid column object from table %s",
+                                $table->getName()
+                            )
+                        );
                     }
 
                     return $column;
