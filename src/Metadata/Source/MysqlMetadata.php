@@ -318,8 +318,8 @@ class MysqlMetadata extends LaminasMysqlMetadata
             . ' AND ' . $p->quoteIdentifierChain(['T', 'TABLE_TYPE'])
             . ' IN (\'BASE TABLE\', \'VIEW\')';
 
-        // For mariadb only ( start at 10 )
-        if (Comparator::greaterThanOrEqualTo($this->version, "10")) {
+        // For mariadb only ( start at 10.5.10 )
+        if (Comparator::greaterThanOrEqualTo($this->version, "10.5.10")) {
             $sql .= ' AND (' . $p->quoteIdentifierChain(['CC', 'LEVEL'])
                 . ' IS NULL OR ' . $p->quoteIdentifierChain(['CC', 'LEVEL']) . ' = \'Table\')';
         }
