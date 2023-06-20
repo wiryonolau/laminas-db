@@ -207,6 +207,8 @@ class MysqlMetadata extends LaminasMysqlMetadata
                 . ' != \'INFORMATION_SCHEMA\'';
         }
 
+        $sql .= ' ORDER BY ' . $p->quoteIdentifierChain(['C', 'ORDINAL_POSITION']) . ' ASC ';
+
         $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
         $columns = [];
         foreach ($results->toArray() as $row) {

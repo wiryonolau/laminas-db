@@ -22,7 +22,7 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
                 "SELECT setting as version FROM pg_settings WHERE name = 'server_version_num'",
                 Adapter::QUERY_MODE_EXECUTE
             );
-            $this->version = strval($result->toArray()[0]["VERSION"]);
+            $this->version = strval($result->toArray()[0]["version"]);
         } catch (Throwable $t) {
             $this->version = "0.0.0";
         }
@@ -146,6 +146,8 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
             $sql .= ' AND ' . $platform->quoteIdentifier('table_schema')
                 . ' = ' . $platform->quoteTrustedValue($schema);
         }
+
+        $sql .= ' ORDER BY ' . $platform->quoteIdentifierChain('ordinal_position') . ' ASC ';
 
         $results = $this->adapter->query($sql, Adapter::QUERY_MODE_EXECUTE);
         $columns = [];
