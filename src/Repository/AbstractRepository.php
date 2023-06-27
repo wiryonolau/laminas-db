@@ -406,12 +406,20 @@ abstract class AbstractRepository implements
     }
 
     /**
+     * Update / Insert to database 
+     * 
+     * @param object model object model
+     * @param string identifier row identifier usually primary key
+     * @param array exclude_attributes list of attributes to be excluded from update command
+     * @param string filter_name function to be call to retrieve attributes from model, attirbutes will be filter by exclude_attributes
+     * 
      * @return object
      */
     public function upsert(
         object $model,
         string $identifier = "id",
-        array $exclude_attributes = []
+        array $exclude_attributes = [],
+        string $filter_name = "getArrayForDb"
     ) {
         $this->getEventManager()->trigger(
             'repository.upsert.pre',
@@ -430,7 +438,15 @@ abstract class AbstractRepository implements
 
         try {
             $attributes = [];
-            foreach ($model->getArrayCopy() as $key => $value) {
+            if ($filter_name and method_exists($model, $filter_name)) {
+                $obj_attributes = $model->{$filter_name}();
+            } else if (method_exists($model, "getArrayCopy")) {
+                $obj_attributes = $model->getArrayCopy();
+            } else {
+                throw new Exception("Cannot retrieve model attribute as array");
+            }
+
+            foreach ($obj_attributes as $key => $value) {
                 if (in_array($key, $exclude_attributes)) {
                     continue;
                 }
@@ -515,3 +531,4 @@ abstract class AbstractRepository implements
         return $this->db->commit();
     }
 }
+
