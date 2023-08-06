@@ -330,9 +330,7 @@ class DdlUtilities
             return true;
         }
 
-        $existingColumns = is_null($existing->getColumns()) ? [] : array_filter($existing->getColumns());
-        $updateColumns = is_null($update->getColumns()) ? [] : array_filter($update->getColumns());
-        if (count(array_diff($existingColumns, $updateColumns))) {
+        if (!self::arrayIsEqual($existing->getColumns(), $update->getColumns())) {
             return true;
         }
 
@@ -347,12 +345,7 @@ class DdlUtilities
             return true;
         }
 
-        $existingReferenceColumns = is_null($existing->getReferencedColumns()) ? [] : array_filter($existing->getReferencedColumns());
-        $updateReferencesColumns = is_null($update->getReferencedColumns()) ? [] : array_filter($update->getReferencedColumns());
-        if (count(array_diff(
-            $existingReferenceColumns,
-            $updateReferencesColumns
-        ))) {
+        if (!self::arrayIsEqual($existing->getReferencedColumns(), $update->getReferencedColumns())) {
             return true;
         }
 
@@ -571,5 +564,17 @@ class DdlUtilities
         ));
 
         return $constraint;
+    }
+
+    public static function arrayIsEqual(?array $a, ?array $b): bool
+    {
+        $a = $a ?? [];
+        $b = $b ?? [];
+
+        return (is_array($a)
+            and is_array($b)
+            and count($a) == count($b)
+            and array_diff($a, $b) === array_diff($b, $a)
+        );
     }
 }

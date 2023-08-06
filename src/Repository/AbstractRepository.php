@@ -6,6 +6,7 @@ namespace Itseasy\Repository;
 
 use Exception;
 use Itseasy\Database\Database;
+use Itseasy\Database\Event\RepositoryEvent;
 use Itseasy\Database\Result;
 use Itseasy\Database\Sql\Filter\SqlFilterAwareInterface;
 use Itseasy\Database\ResultInterface;
@@ -50,15 +51,10 @@ abstract class AbstractRepository implements
         string $identifier = "id",
         $objectPrototype = null
     ) {
-        $this->getEventManager()->trigger(
-            "repository.select.pre",
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "pre",
+            func_get_args(),
         );
 
         $select = new Sql\Select($this->table);
@@ -68,15 +64,11 @@ abstract class AbstractRepository implements
 
         $result = $this->db->execute($select);
 
-        $this->getEventManager()->trigger(
-            "repository.select.post",
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => $result->isError()
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "post",
+            func_get_args(),
+            $result->isError()
         );
 
         if (is_null($objectPrototype)) {
@@ -97,15 +89,10 @@ abstract class AbstractRepository implements
         $resultSetObjectPrototype = null,
         $objectPrototype = null
     ) {
-        $this->getEventManager()->trigger(
-            'repository.select.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "pre",
+            func_get_args(),
         );
 
         $select = new Sql\Select($this->table);
@@ -125,15 +112,11 @@ abstract class AbstractRepository implements
 
         $result = $this->db->execute($select);
 
-        $this->getEventManager()->trigger(
-            'repository.select.post',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => $result->isError()
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "post",
+            func_get_args(),
+            $result->isError()
         );
 
         if (is_null($resultSetObjectPrototype) and is_null($objectPrototype)) {
@@ -146,15 +129,10 @@ abstract class AbstractRepository implements
     public function getRowCount(
         array $where = []
     ): int {
-        $this->getEventManager()->trigger(
-            'repository.select.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "pre",
+            func_get_args(),
         );
 
         $result = new Result();
@@ -170,15 +148,11 @@ abstract class AbstractRepository implements
         } catch (Exception $e) {
             return 0;
         } finally {
-            $this->getEventManager()->trigger(
-                'repository.select.post',
-                null,
-                [
-                    "function" => __FUNCTION__,
-                    "table" => $this->table,
-                    "arguments" => func_get_args(),
-                    "success" => $result->isError()
-                ]
+            $this->triggerRepositoryEvent(
+                "select",
+                "post",
+                func_get_args(),
+                $result->isError()
             );
         }
     }
@@ -194,15 +168,10 @@ abstract class AbstractRepository implements
         $resultSetObjectPrototype = null,
         $objectPrototype = null
     ) {
-        $this->getEventManager()->trigger(
-            'repository.select.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "pre",
+            func_get_args(),
         );
 
         $select = new Sql\Select($this->table);
@@ -223,15 +192,11 @@ abstract class AbstractRepository implements
 
         $result = $this->db->execute($select);
 
-        $this->getEventManager()->trigger(
-            'repository.select.post',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => $result->isError()
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "post",
+            func_get_args(),
+            $result->isError()
         );
 
         if (is_null($resultSetObjectPrototype) and is_null($objectPrototype)) {
@@ -244,15 +209,10 @@ abstract class AbstractRepository implements
     public function getFilterAwareRowCount(
         string $filters = ""
     ): int {
-        $this->getEventManager()->trigger(
-            'repository.select.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            "select",
+            "pre",
+            func_get_args(),
         );
 
         $result = new Result();
@@ -271,15 +231,11 @@ abstract class AbstractRepository implements
         } catch (Exception $e) {
             return 0;
         } finally {
-            $this->getEventManager()->trigger(
-                'repository.select.post',
-                null,
-                [
-                    "function" => __FUNCTION__,
-                    "table" => $this->table,
-                    "arguments" => func_get_args(),
-                    "success" => $result->isError()
-                ]
+            $this->triggerRepositoryEvent(
+                "select",
+                "post",
+                func_get_args(),
+                $result->isError()
             );
         }
     }
@@ -288,17 +244,11 @@ abstract class AbstractRepository implements
         array $where = [],
         bool $check_deleted = false
     ): ResultInterface {
-        $this->getEventManager()->trigger(
-            'repository.delete.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            __FUNCTION__,
+            "pre",
+            func_get_args(),
         );
-
 
         $delete = new Sql\Delete($this->table);
         $delete->where($where);
@@ -327,15 +277,11 @@ abstract class AbstractRepository implements
             $this->rollback();
             return $result;
         } finally {
-            $this->getEventManager()->trigger(
-                'repository.delete.post',
-                null,
-                [
-                    "function" => __FUNCTION__,
-                    "table" => $this->table,
-                    "arguments" => func_get_args(),
-                    "success" => $result->isSuccess()
-                ]
+            $this->triggerRepositoryEvent(
+                __FUNCTION__,
+                "pre",
+                func_get_args(),
+                $result->isSuccess()
             );
         }
     }
@@ -344,17 +290,11 @@ abstract class AbstractRepository implements
         string $filters = "",
         bool $check_deleted = false
     ): ResultInterface {
-        $this->getEventManager()->trigger(
-            'repository.delete.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            "delete",
+            "pre",
+            func_get_args()
         );
-
 
         $delete = new Sql\Delete($this->table);
         $delete = $this->applyFilter(
@@ -392,15 +332,11 @@ abstract class AbstractRepository implements
             $this->rollback();
             return $result;
         } finally {
-            $this->getEventManager()->trigger(
-                'repository.delete.post',
-                null,
-                [
-                    "function" => __FUNCTION__,
-                    "table" => $this->table,
-                    "arguments" => func_get_args(),
-                    "success" => $result->isSuccess()
-                ]
+            $this->triggerRepositoryEvent(
+                "delete",
+                "post",
+                func_get_args(),
+                $result->isSuccess()
             );
         }
     }
@@ -421,15 +357,11 @@ abstract class AbstractRepository implements
         array $exclude_attributes = [],
         string $filter_name = "getArrayForDb"
     ) {
-        $this->getEventManager()->trigger(
-            'repository.upsert.pre',
-            null,
-            [
-                "function" => __FUNCTION__,
-                "table" => $this->table,
-                "arguments" => func_get_args(),
-                "success" => null
-            ]
+        $this->triggerRepositoryEvent(
+            __FUNCTION__,
+            "pre",
+            func_get_args(),
+            null
         );
 
         $success = true;
@@ -497,15 +429,11 @@ abstract class AbstractRepository implements
             $success = false;
             return new $model();
         } finally {
-            $this->getEventManager()->trigger(
-                'repository.upsert.post',
-                null,
-                [
-                    "function" => __FUNCTION__,
-                    "table" => $this->table,
-                    "arguments" => func_get_args(),
-                    "success" => $success
-                ]
+            $this->triggerRepositoryEvent(
+                __FUNCTION__,
+                "post",
+                func_get_args(),
+                $success
             );
         }
     }
@@ -530,5 +458,23 @@ abstract class AbstractRepository implements
     {
         return $this->db->commit();
     }
-}
 
+    private function triggerRepositoryEvent(
+        string $action,
+        string $suffix,
+        array $arguments = [],
+        ?bool $success = false
+    ) {
+        $event = new RepositoryEvent($this);
+        $event->setName(sprintf(
+            "%s.%s.%s",
+            $event->getName(),
+            $action,
+            $suffix
+        ));
+        $event->setTable($this->table);
+        $event->setArguments($arguments);
+        $event->setIsSuccess(!empty($success));
+        $this->getEventManager()->triggerEvent($event);
+    }
+}
