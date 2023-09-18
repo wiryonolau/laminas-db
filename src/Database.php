@@ -212,6 +212,26 @@ class Database implements LoggerAwareInterface
         return $stmt;
     }
 
+    /**
+     * Check if connection disconnect from db
+     * Auto reconnect for any exception
+     * For long console app
+     */
+    public function ping()
+    {
+        try {
+            $stmt = $this->dbAdapter->createStatement();
+            $stmt->setSql("SELECT 1");
+            $stmt->execute();
+        } catch (ExceptionInterface $e) {
+            $this->dbAdapter->getDriver()->getConnection()->connect();
+        } catch (PDOException $e) {
+            $this->dbAdapter->getDriver()->getConnection()->connect();
+        } catch (Exception $e) {
+            $this->dbAdapter->getDriver()->getConnection()->connect();
+        }
+    }
+
     public function execute(
         $statement,
         array $parameters = [],
