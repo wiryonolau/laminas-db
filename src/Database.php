@@ -219,15 +219,20 @@ class Database implements LoggerAwareInterface
      */
     public function ping()
     {
+        $this->logger->debug("Check Database Connection");
         try {
             $stmt = $this->dbAdapter->createStatement();
             $stmt->setSql("SELECT 1");
             $stmt->execute();
+            $this->logger->debug("Database Connection OK");
         } catch (ExceptionInterface $e) {
+            $this->logger->debug("Database Connection Failed ... Reconnecting");
             $this->dbAdapter->getDriver()->getConnection()->connect();
         } catch (PDOException $e) {
+            $this->logger->debug("Database Connection Failed ... Reconnecting");
             $this->dbAdapter->getDriver()->getConnection()->connect();
         } catch (Exception $e) {
+            $this->logger->debug("Database Connection Failed ... Reconnecting");
             $this->dbAdapter->getDriver()->getConnection()->connect();
         }
     }
