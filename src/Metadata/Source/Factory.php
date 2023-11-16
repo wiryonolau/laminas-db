@@ -3,6 +3,7 @@
 namespace Itseasy\Database\Metadata\Source;
 
 use Laminas\Db\Adapter\Adapter;
+use Laminas\Db\Adapter\Exception\RuntimeException;
 use Laminas\Db\Metadata\Source\Factory as LaminasSourceFactory;
 use Laminas\Db\Metadata\MetadataInterface;
 
@@ -17,13 +18,17 @@ class Factory extends LaminasSourceFactory
     {
         $platformName = $adapter->getPlatform()->getName();
 
-        switch ($platformName) {
-            case self::PLATFORM_MYSQL:
-                return new MysqlMetadata($adapter);
-            case self::PLATFORM_POSTGRESQL:
-                return new PostgresqlMetadata($adapter);
-            default:
-                return parent::createSourceFromAdapter($adapter);
+        try {
+            switch ($platformName) {
+                case self::PLATFORM_MYSQL:
+                    return new MysqlMetadata($adapter);
+                case self::PLATFORM_POSTGRESQL:
+                    return new PostgresqlMetadata($adapter);
+                default:
+                    return parent::createSourceFromAdapter($adapter);
+            }
+        } catch (Throwable $th) {
+            throw new RuntimeException($th->getMessage());
         }
     }
 }
