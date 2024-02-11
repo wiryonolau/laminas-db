@@ -48,7 +48,10 @@ trait SqlFilterAwareTrait
         }
 
         if (!is_null($filters)) {
-            foreach (explode($this->_filterValueSeparator, trim($filters)) as $filter) {
+            foreach (explode(
+                $this->_filterValueSeparator,
+                trim($filters)
+            ) as $filter) {
                 $sql = $this->getSqlFilter()->applyFilter(
                     $sql,
                     urldecode(trim($filter)),

@@ -59,7 +59,7 @@ class RegexSqlFilter implements SqlFilterInterface
             $this->clearRules();
         }
         foreach ($rules as $rule) {
-            if (empty($rule) or count($rule) !== 2) {
+            if (empty($rule) or count($rule) < 2) {
                 continue;
             }
 
@@ -70,12 +70,21 @@ class RegexSqlFilter implements SqlFilterInterface
         }
     }
 
-    public function addRule(string $regex, $callback): void
-    {
+    /**
+     * @param string    $regex          Regex pattern without ^ and $
+     * @param Callable  $callback       Callback function, must return sql interface or predicate
+     * @param bool      $use_full_sql   Modify whole sql instead of where
+     */
+    public function addRule(
+        string $regex,
+        $callback,
+        bool $use_full_sql = false
+    ): void {
         if (is_callable($callback)) {
             $obj = (object) [
                 "regex" => $regex,
-                "callback" => $callback
+                "callback" => $callback,
+                "use_full_sql" => $use_full_sql
             ];
             $this->rules[] = $obj;
         }
@@ -95,10 +104,16 @@ class RegexSqlFilter implements SqlFilterInterface
             }
 
             array_shift($matches);
-            $sql->where(
-                call_user_func_array($rule->callback, $matches),
-                $combination
-            );
+
+            if ($rule->use_full_sql) {
+                array_unshift($matches, $sql);
+                $sql = call_user_func_array($rule->callback, $matches);
+            } else {
+                $sql->where(
+                    call_user_func_array($rule->callback, $matches),
+                    $combination
+                );
+            }
 
             break;
         }

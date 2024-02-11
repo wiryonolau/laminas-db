@@ -51,6 +51,8 @@ final class DatabaseTest extends TestCase
             $this->assertEquals($obj->name, $dummy_data[($obj->id - 1)]);
         }
 
+        $db->ping();
+
         $this->assertEquals($result[0]->getFirstRow() instanceof Model\TestModel, true);
         $this->assertEquals($result[0]->getRows() instanceof ArrayIterator, true);
         $this->assertEquals($result[0]->getSingleValue(), 2);
