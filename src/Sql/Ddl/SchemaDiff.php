@@ -14,7 +14,9 @@ use Itseasy\Database\Metadata\Hydrator\ConstraintObjectHydrator;
 use Itseasy\Database\Metadata\Hydrator\TableObjectHydrator;
 use Itseasy\Database\Metadata\Object\MysqlTableObject;
 use Itseasy\Database\Metadata\Source\Factory;
+use Itseasy\Database\Sql\Ddl\View\CreateView;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
+use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Sql\Sql;
 use Laminas\Hydrator\ClassMethodsHydrator;
 
@@ -54,6 +56,12 @@ class SchemaDiff
             }
         }
 
+        // Always create / replace
+        foreach ($schema["views"] as $view) {
+            $ddl = new CreateView($view);
+            $ddl_string[] = $sql->buildSqlString($ddl);
+        }
+
         foreach ($schema["triggers"] as $trigger) {
             // Remove empty ddl 
             $ddls = array_filter($triggerDiff->diff($trigger));
@@ -78,6 +86,7 @@ class SchemaDiff
         $columnObjectHydrator = new ColumnObjectHydrator();
         $constraintObjectHydrator = new ConstraintObjectHydrator();
         $triggerObjectHydrator = new ClassMethodsHydrator();
+        $viewObjectHydrator = new ClassMethodsHydrator();
 
         $schema = array_merge(
             ["tables" => [], "triggers" => [], "expressions" => []],
@@ -170,6 +179,24 @@ class SchemaDiff
             $schema["tables"][$index] = $table;
         }
 
+        $schema["views"] = array_map(
+            function ($view) use ($viewObjectHydrator) {
+                if (is_array($view)) {
+                    return $viewObjectHydrator->hydrate(
+                        $view,
+                        new ViewObject($view["name"])
+                    );
+                }
+
+                if (is_callable($view)) {
+                    $view = $view();
+                    if (!$view instanceof ViewObject) {
+                        throw new Exception("Invalid view object");
+                    }
+                }
+            },
+            $schema["views"]
+        );
 
         $schema["triggers"]  = array_map(
             function ($trigger) use ($triggerObjectHydrator) {
