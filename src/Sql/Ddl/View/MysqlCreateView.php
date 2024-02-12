@@ -7,15 +7,25 @@ use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Sql\AbstractSql;
 use Laminas\Db\Sql\Ddl\SqlInterface;
 
-class CreateView extends AbstractSql implements SqlInterface
+class MysqlCreateView extends AbstractSql implements SqlInterface
 {
     const VIEW = "view";
 
     protected $view;
 
+    // CREATE
+    // [OR REPLACE]
+    // [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]
+    // [DEFINER = user]
+    // [SQL SECURITY { DEFINER | INVOKER }]
+    // VIEW view_name [(column_list)]
+    // AS select_statement
+    // [WITH [CASCADED | LOCAL] CHECK OPTION]
+
     protected $specifications = [
         self::VIEW => <<<EOF
             CREATE OR REPLACE 
+            DEFINER=CURRENT_USER 
             VIEW %1\$s 
             AS %2\$s 
         EOF
