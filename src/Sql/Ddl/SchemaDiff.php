@@ -15,6 +15,7 @@ use Itseasy\Database\Metadata\Hydrator\TableObjectHydrator;
 use Itseasy\Database\Metadata\Object\MysqlTableObject;
 use Itseasy\Database\Metadata\Source\Factory;
 use Itseasy\Database\Sql\Ddl\View\CreateView;
+use Itseasy\Database\Sql\Ddl\View\MysqlCreateView;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Sql\Sql;
@@ -36,12 +37,15 @@ class SchemaDiff
         switch ($adapter->getPlatform()->getName()) {
             case Factory::PLATFORM_MYSQL:
                 $tableObject = MysqlTableObject::class;
+                $createViewDdl = MysqlCreateView::class;
                 break;
             case Factory::PLATFORM_POSTGRESQL:
                 $tableObject = AbstractTableObject::class;
+                $createViewDdl = CreateView::class;
                 break;
             default:
                 $tableObject = AbstractTableObject::class;
+                $createViewDdl = CreateView::class;
         }
 
         $schema = self::hydrate($schema, $tableObject);
@@ -58,7 +62,7 @@ class SchemaDiff
 
         // Always create / replace
         foreach ($schema["views"] as $view) {
-            $ddl = new CreateView($view);
+            $ddl = new $createViewDdl($view);
             $ddl_string[] = $sql->buildSqlString($ddl);
         }
 
@@ -193,6 +197,7 @@ class SchemaDiff
                     if (!$view instanceof ViewObject) {
                         throw new Exception("Invalid view object");
                     }
+                    return $view;
                 }
             },
             $schema["views"]
