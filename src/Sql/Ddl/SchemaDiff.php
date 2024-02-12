@@ -89,7 +89,7 @@ class SchemaDiff
         $viewObjectHydrator = new ClassMethodsHydrator();
 
         $schema = array_merge(
-            ["tables" => [], "triggers" => [], "expressions" => []],
+            ["tables" => [], "views" => [], "triggers" => [], "expressions" => []],
             $schema
         );
 
