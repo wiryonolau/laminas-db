@@ -408,6 +408,14 @@ abstract class AbstractRepository implements
                         strval($model->{$identifier})
                     ]));
                 }
+
+                if (!$updateResult->getAffectedRows()) {
+                    throw new Exception(vsprintf("Record not exist in %s with %s = %s", [
+                        $this->table,
+                        $identifier,
+                        strval($model->{$identifier})
+                    ]));
+                }
                 $id = $model->{$identifier};
             } else {
                 $insert = new Sql\Insert($this->table);
