@@ -63,8 +63,9 @@ $logger->addWriter('stream', null, ['stream' => 'php://stderr']);
 
 foreach ($commands as $command) {
     $commandObject = new $command();
+    /** @var Symfony\Component\Console\Command\Command $commandObject*/
     $commandObject->setLogger($logger);
-    $application->add(new $command());
+    $application->add($commandObject);
 }
 
 $application->run();

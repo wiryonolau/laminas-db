@@ -21,8 +21,9 @@ class MysqlMetadata extends LaminasMysqlMetadata
     {
         parent::__construct($adapter);
         try {
+            // Version is semver major.minor without patch , e.g 10.12 8.0
             $result = $this->adapter->query(
-                "SELECT VERSION() AS VERSION",
+                "SELECT CAST(VERSION() AS DECIMAL(4,2)) AS VERSION",
                 Adapter::QUERY_MODE_EXECUTE
             );
             $this->version = $result->toArray()[0]["VERSION"];
