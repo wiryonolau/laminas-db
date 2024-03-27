@@ -20,6 +20,7 @@ use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Sql\Sql;
 use Laminas\Hydrator\ClassMethodsHydrator;
+use Laminas\Db\Sql\SqlInterface;
 
 /**
  * Calculate schema differences by comparing given array of tables and triggers with current metadata
@@ -62,6 +63,7 @@ class SchemaDiff
 
         // Always create / replace
         foreach ($schema["views"] as $view) {
+            /** @var SqlInterface $ddl */
             $ddl = new $createViewDdl($view);
             $ddl_string[] = $sql->buildSqlString($ddl);
         }
