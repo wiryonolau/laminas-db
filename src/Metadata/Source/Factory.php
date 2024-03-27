@@ -10,6 +10,8 @@ use Laminas\Db\Metadata\MetadataInterface;
 class Factory extends LaminasSourceFactory
 {
     const PLATFORM_MYSQL = "MySQL";
+    // Currently no specific case for MariaDB, use MySQL as value
+    const PLATFORM_MARIADB = "MySQL";
     const PLATFORM_POSTGRESQL = "PostgreSQL";
     const PLATFORM_SQLITE = "SQLite";
     const PLATFORM_ORACLE = "Oracle";

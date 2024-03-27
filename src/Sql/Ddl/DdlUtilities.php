@@ -8,6 +8,7 @@ use Itseasy\Database\Metadata\Source\Factory;
 use Itseasy\Database\Sql\Ddl\Column\MysqlColumnInterface;
 use Itseasy\Database\Sql\Ddl\Column\PostgresColumnInterface;
 use Itseasy\Database\Sql\Ddl\Column\SqliteColumnInterface;
+use Itseasy\Database\Sql\Ddl\Constraint\PrimaryKey;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ColumnObject;
 use Laminas\Db\Metadata\Object\ConstraintObject;
@@ -20,7 +21,6 @@ use Laminas\Db\Sql\Ddl\Column\ColumnInterface;
 use Laminas\Db\Sql\Ddl\Constraint\Check;
 use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
 use Laminas\Db\Sql\Ddl\Constraint\ForeignKey;
-use Laminas\Db\Sql\Ddl\Constraint\PrimaryKey;
 use Laminas\Db\Sql\Ddl\Constraint\UniqueKey;
 use Laminas\Db\Sql\Ddl\CreateTable;
 use Laminas\Db\Sql\Ddl\SqlInterface;
@@ -265,7 +265,8 @@ class DdlUtilities
 
     public static function constraintObjectToDdl(
         ConstraintObject $constraintObject,
-        string $platformName
+        string $platformName,
+        bool $tableExist = false
     ): ConstraintInterface {
         $constraintObject = self::filterConstraint(
             $constraintObject
@@ -274,9 +275,11 @@ class DdlUtilities
         switch ($constraintObject->getType()) {
             case "PRIMARY KEY":
                 // Primary constraint name always primary
+                // Different sql for existing table
                 $ddl = new PrimaryKey(
                     $constraintObject->getColumns(),
-                    $constraintObject->getName()
+                    $constraintObject->getName(),
+                    $tableExist
                 );
                 break;
             case "UNIQUE":
@@ -502,7 +505,6 @@ class DdlUtilities
         if ($constraint->getType() == "PRIMARY KEY") {
             if (
                 $platformName == Factory::PLATFORM_MYSQL
-                and Comparator::lessThan($platformVersion, "8")
             ) {
                 $ddl = new DropPrimaryKey(
                     $constraint->getTableName()

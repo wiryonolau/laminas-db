@@ -390,10 +390,18 @@ abstract class AbstractRepository implements
                 }
             }
 
-            // Always exclude identifier
-            unset($attributes[$identifier]);
 
-            if ($model->{$identifier}) {
+            // Try Insert first
+            // If there is no constraint in the table insert will always succeed
+            $insert = new Sql\Insert($this->table);
+            $insert->values($attributes);
+            $insertResult = $this->db->execute($insert);
+            $id = $insertResult->getGeneratedValue();
+
+            if ($insertResult->isError()) {
+                // Always exclude identifier column when update
+                unset($attributes[$identifier]);
+
                 $update = new Sql\Update($this->table);
                 $update->set($attributes);
                 $update->where([
@@ -417,15 +425,6 @@ abstract class AbstractRepository implements
                     ]));
                 }
                 $id = $model->{$identifier};
-            } else {
-                $insert = new Sql\Insert($this->table);
-                $insert->values($attributes);
-                $insertResult = $this->db->execute($insert);
-                if ($insertResult->isError()) {
-                    throw new Exception(sprintf("Unable to add new row to %s", $this->table));
-                }
-
-                $id = $insertResult->getGeneratedValue();
             }
 
             $this->db->commit();

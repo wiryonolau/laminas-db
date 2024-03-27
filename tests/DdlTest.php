@@ -4,13 +4,18 @@ namespace Itseasy\DatabaseTest;
 
 use Itseasy\Database\Database;
 use Itseasy\Database\Metadata\Source\Factory;
+use Itseasy\Database\Sql\Ddl\Constraint\PrimaryKey;
 use Itseasy\Database\Sql\Ddl\DdlUtilities;
 use Itseasy\Database\Sql\Ddl\TableDiff;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
+use Laminas\Db\Metadata\Object\ColumnObject;
+use Laminas\Db\Metadata\Object\ConstraintObject;
+use Laminas\Db\Metadata\Object\TableObject;
 use Laminas\Db\Sql\Sql;
 use Laminas\Log\Logger;
 use PHPUnit\Framework\TestCase;
+use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
 use Throwable;
 
 final class DdlTest extends TestCase
@@ -22,6 +27,8 @@ final class DdlTest extends TestCase
         $this->logger = new Logger();
         $this->logger->addWriter('stream', null, ['stream' => 'php://stderr']);
     }
+
+
 
     public function testMysql57()
     {
@@ -50,7 +57,6 @@ final class DdlTest extends TestCase
 
 
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
-        debug($meta->getMetadata());
 
         $tables = $meta->getTables();
         foreach ($tables as $table) {
@@ -124,6 +130,7 @@ final class DdlTest extends TestCase
         $meta = Factory::createSourceFromAdapter($db->getAdapter());
 
         $tables = $meta->getTables();
+
         foreach ($tables as $table) {
             $this->testDiff($db, $table);
         }
@@ -156,7 +163,6 @@ final class DdlTest extends TestCase
         $tables = $meta->getTables();
         foreach ($tables as $table) {
             $this->testDiff($db, $table);
-            break;
         }
 
         $this->checkTable($meta);
@@ -164,6 +170,14 @@ final class DdlTest extends TestCase
 
     private function testDiff(Database $db, AbstractTableObject $table)
     {
+        // Test alter primary key
+        $constraint = new ConstraintObject("PRIMARY", $table->getName());
+        $constraint->setType("PRIMARY KEY");
+        $constraint->setColumns(["test"]);
+        $table->setConstraints([
+            $constraint
+        ]);
+
         $sql = new Sql($db->getAdapter());
         $diff = new TableDiff($db->getAdapter());
         $tableDdl = DdlUtilities::tableObjectToDdl($table, $db->getAdapter()->getPlatform()->getName());

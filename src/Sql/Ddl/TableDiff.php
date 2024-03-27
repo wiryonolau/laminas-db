@@ -156,7 +156,11 @@ class TableDiff
 
                     $hasChange = true;
                     $ddl->addConstraint(
-                        DdlUtilities::constraintObjectToDdl($constraint, $this->platformName)
+                        DdlUtilities::constraintObjectToDdl(
+                            $constraint,
+                            $this->platformName,
+                            $existingTable ? true : false
+                        )
                     );
 
                     unset($existingConstraints[$constraint->getName()]);

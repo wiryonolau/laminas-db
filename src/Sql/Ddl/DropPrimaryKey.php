@@ -6,6 +6,9 @@ use Laminas\Db\Adapter\Platform\PlatformInterface;
 use Laminas\Db\Sql\AbstractSql;
 use Laminas\Db\Sql\Ddl\SqlInterface;
 
+/**
+ * Will not drop primary key with auto increment
+ */
 class DropPrimaryKey extends AbstractSql implements SqlInterface
 {
     public const DROP_PRIMARY_KEY = 'dropPrimaryKey';
