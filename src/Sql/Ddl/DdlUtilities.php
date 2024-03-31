@@ -16,8 +16,10 @@ use Laminas\Db\Sql\Ddl\AlterTable;
 use Laminas\Db\Sql\Ddl\Column\AbstractLengthColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractPrecisionColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractTimestampColumn;
+use Laminas\Db\Sql\Ddl\Column\Char;
 use Laminas\Db\Sql\Ddl\Column\Column;
 use Laminas\Db\Sql\Ddl\Column\ColumnInterface;
+use Laminas\Db\Sql\Ddl\Column\Varchar;
 use Laminas\Db\Sql\Ddl\Constraint\Check;
 use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
 use Laminas\Db\Sql\Ddl\Constraint\ForeignKey;
@@ -214,19 +216,25 @@ class DdlUtilities
         $object = new $object($columnObject->getName());
 
         if ($object instanceof AbstractLengthColumn) {
-            $object->setLength($columnObject->getCharacterMaximumLength());
+            $characterMaximumLength = $columnObject->getCharacterMaximumLength();
+            if ($object instanceof Varchar) {
+                $characterMaximumLength = min($characterMaximumLength ?? 256, 255);
+            } else if ($object instanceof Char) {
+                $characterMaximumLength = min($characterMaximumLength ?? 256, 255);
+            }
+            $object->setLength($characterMaximumLength);
         }
 
         if ($object instanceof AbstractPrecisionColumn) {
-            $object->setDigits($columnObject->getNumericPrecision());
-            $object->setDecimal($columnObject->getNumericScale());
+            $object->setDigits($columnObject->getNumericPrecision() ?? 16);
+            $object->setDecimal($columnObject->getNumericScale() ?? 2);
         }
 
         if ($object instanceof AbstractTimestampColumn) {
         }
 
         // Default column
-        $object->setNullable($columnObject->isNullable());
+        $object->setNullable($columnObject->isNullable() ?? false);
         $object->setDefault($columnObject->getColumnDefault());
 
         $options = [];
