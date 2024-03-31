@@ -5,6 +5,7 @@ namespace Itseasy\Database\Sql\Ddl;
 use Composer\Semver\Comparator;
 use Exception;
 use Itseasy\Database\Metadata\Source\Factory;
+use Itseasy\Database\Sql\Ddl\Column\Longtext;
 use Itseasy\Database\Sql\Ddl\Column\MysqlColumnInterface;
 use Itseasy\Database\Sql\Ddl\Column\PostgresColumnInterface;
 use Itseasy\Database\Sql\Ddl\Column\SqliteColumnInterface;
@@ -16,9 +17,12 @@ use Laminas\Db\Sql\Ddl\AlterTable;
 use Laminas\Db\Sql\Ddl\Column\AbstractLengthColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractPrecisionColumn;
 use Laminas\Db\Sql\Ddl\Column\AbstractTimestampColumn;
+use Laminas\Db\Sql\Ddl\Column\Binary;
 use Laminas\Db\Sql\Ddl\Column\Char;
 use Laminas\Db\Sql\Ddl\Column\Column;
 use Laminas\Db\Sql\Ddl\Column\ColumnInterface;
+use Laminas\Db\Sql\Ddl\Column\Text;
+use Laminas\Db\Sql\Ddl\Column\Varbinary;
 use Laminas\Db\Sql\Ddl\Column\Varchar;
 use Laminas\Db\Sql\Ddl\Constraint\Check;
 use Laminas\Db\Sql\Ddl\Constraint\ConstraintInterface;
@@ -221,13 +225,22 @@ class DdlUtilities
                 $characterMaximumLength = min($characterMaximumLength ?? 256, 255);
             } else if ($object instanceof Char) {
                 $characterMaximumLength = min($characterMaximumLength ?? 256, 255);
+            } else if ($object instanceof Text) {
+                $characterMaximumLength = null;
+            } else if ($object instanceof Longtext) {
+                $characterMaximumLength = null;
+            } else if ($object instanceof Binary) {
+                $characterMaximumLength = min($characterMaximumLength ?? 256, 255);
+            } else if ($object instanceof Varbinary) {
+                $characterMaximumLength = min($characterMaximumLength ?? 65536, 65535);
             }
+
             $object->setLength($characterMaximumLength);
         }
 
         if ($object instanceof AbstractPrecisionColumn) {
-            $object->setDigits($columnObject->getNumericPrecision() ?? 16);
-            $object->setDecimal($columnObject->getNumericScale() ?? 2);
+            $object->setDigits($columnObject->getNumericPrecision() ?? 10);
+            $object->setDecimal($columnObject->getNumericScale() ?? 0);
         }
 
         if ($object instanceof AbstractTimestampColumn) {
