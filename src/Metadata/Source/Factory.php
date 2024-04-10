@@ -10,11 +10,18 @@ use Laminas\Db\Metadata\MetadataInterface;
 class Factory extends LaminasSourceFactory
 {
     const PLATFORM_MYSQL = "MySQL";
-    // Currently no specific case for MariaDB, use MySQL as value
-    const PLATFORM_MARIADB = "MySQL";
+    const PLATFORM_MARIADB = "MariaDB";
     const PLATFORM_POSTGRESQL = "PostgreSQL";
     const PLATFORM_SQLITE = "SQLite";
     const PLATFORM_ORACLE = "Oracle";
+
+    const PLATFORM_LIST = [
+        self::PLATFORM_MARIADB,
+        self::PLATFORM_MYSQL,
+        self::PLATFORM_POSTGRESQL,
+        self::PLATFORM_SQLITE,
+        self::PLATFORM_ORACLE
+    ];
 
     public static function createSourceFromAdapter(Adapter $adapter): MetadataInterface
     {
@@ -22,6 +29,7 @@ class Factory extends LaminasSourceFactory
 
         try {
             switch ($platformName) {
+                case self::PLATFORM_MARIADB:
                 case self::PLATFORM_MYSQL:
                     return new MysqlMetadata($adapter);
                 case self::PLATFORM_POSTGRESQL:
