@@ -206,11 +206,7 @@ class DdlUtilities
 
         if (!empty($table->getColumns())) {
             foreach ($table->getColumns() as $column) {
-                $column_constraints = array_filter($table->getConstraints(), function ($c) use ($column) {
-                    return in_array($column->getName(), $c->getColumns());
-                });
-
-                $ddl->addColumn(self::columnObjectToDdl($column, $column_constraints, $platformName));
+                $ddl->addColumn(self::columnObjectToDdl($column, $platformName));
             }
         }
 
@@ -221,8 +217,9 @@ class DdlUtilities
 
     public static function columnObjectToDdl(
         ColumnObject $columnObject,
-        array $existingColumnConstraints,
-        string $platformName
+        string $platformName,
+        ?ColumnObject $existingColumnObject = null,
+        array $existingColumnConstraints = []
     ): ColumnInterface {
         $object = self::getColumnType($columnObject, $platformName);
         $object = new $object($columnObject->getName());
@@ -280,9 +277,19 @@ class DdlUtilities
                     $options["identity_minimum"] = $columnObject->getErrata("identity_minimum");
                     $options["identity_maximum"] = $columnObject->getErrata("identity_maximum");
                     $options["identity_cycle"] = $columnObject->getErrata("identity_cycle");
+
+                    $remove_identity = false;
+                    if ($existingColumnObject and $existingColumnObject->getErrata("is_identity")) {
+                        $remove_identity = true;
+                    }
                 }
 
-                $object = new PostgreColumn($object, $existingColumnConstraints);
+
+                $object = new PostgreColumn(
+                    $object,
+                    $remove_identity,
+                    $existingColumnConstraints
+                );
                 break;
             case Factory::PLATFORM_SQLITE:
                 break;

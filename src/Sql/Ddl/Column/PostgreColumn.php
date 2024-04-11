@@ -14,13 +14,18 @@ class PostgreColumn implements ColumnInterface
 {
     protected $column;
     protected $constraints;
+    protected $remove_identity;
 
     /**
      * @param array $constraints Array of ConstraintInterface
      */
-    public function  __construct(ColumnInterface $column, array $constraints = [])
-    {
+    public function  __construct(
+        ColumnInterface $column,
+        bool $remove_identity,
+        array $constraints = []
+    ) {
         $this->column = $column;
+        $this->remove_identity = $remove_identity;
         $this->constraints = $constraints;
     }
 
@@ -113,6 +118,12 @@ class PostgreColumn implements ColumnInterface
             $types[] = self::TYPE_VALUE;
         }
 
+        if ($this->remove_identity) {
+            $spec .= ', ALTER COLUMN %s DROP IDENTITY IF EXISTS';
+            $params[] = $this->column->getName();
+            $types[] = self::TYPE_IDENTIFIER;
+        }
+
         $data = [
             [
                 $spec,
@@ -120,7 +131,6 @@ class PostgreColumn implements ColumnInterface
                 $types,
             ],
         ];
-
 
         if (count($constraints)) {
             $data[] = " ";
