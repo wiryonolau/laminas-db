@@ -84,10 +84,12 @@ class DdlUtilities
             case "character":
                 return "Char";
             case "character varying":
+            case "character_varying":
                 return "Varchar";
             case "dec":
                 return "Decimal";
             case "double precision":
+            case "double_precision":
                 return "DoublePrecision";
             case "float":
                 return "Real";
@@ -209,8 +211,6 @@ class DdlUtilities
                 $ddl->addColumn(self::columnObjectToDdl($column, $platformName));
             }
         }
-
-
 
         return $ddl;
     }
