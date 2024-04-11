@@ -7,7 +7,8 @@ use Exception;
 use Itseasy\Database\Metadata\Source\Factory;
 use Itseasy\Database\Sql\Ddl\Column\Longtext;
 use Itseasy\Database\Sql\Ddl\Column\MysqlColumnInterface;
-use Itseasy\Database\Sql\Ddl\Column\PostgresColumnInterface;
+use Itseasy\Database\Sql\Ddl\Column\PostgreColumn;
+use Itseasy\Database\Sql\Ddl\Column\PostgreColumnInterface;
 use Itseasy\Database\Sql\Ddl\Column\SqliteColumnInterface;
 use Itseasy\Database\Sql\Ddl\Constraint\PrimaryKey;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
@@ -148,7 +149,7 @@ class DdlUtilities
                 $type = self::getMysqlColumnType($columnObject);
                 break;
             case Factory::PLATFORM_POSTGRESQL:
-                $interface = PostgresColumnInterface::class;
+                $interface = PostgreColumnInterface::class;
                 $type = self::getPostgresqlColumnType($columnObject);
                 break;
             case Factory::PLATFORM_SQLITE:
@@ -195,12 +196,6 @@ class DdlUtilities
     ): SqlInterface {
         $ddl = new CreateTable($table->getName());
 
-        if (!empty($table->getColumns())) {
-            foreach ($table->getColumns() as $column) {
-                $ddl->addColumn(self::columnObjectToDdl($column, $platformName));
-            }
-        }
-
         if (!empty($table->getConstraints())) {
             foreach ($table->getConstraints() as $constraint) {
                 $ddl->addConstraint(
@@ -209,11 +204,24 @@ class DdlUtilities
             }
         }
 
+        if (!empty($table->getColumns())) {
+            foreach ($table->getColumns() as $column) {
+                $column_constraints = array_filter($table->getConstraints(), function ($c) use ($column) {
+                    return in_array($column->getName(), $c->getColumns());
+                });
+
+                $ddl->addColumn(self::columnObjectToDdl($column, $column_constraints, $platformName));
+            }
+        }
+
+
+
         return $ddl;
     }
 
     public static function columnObjectToDdl(
         ColumnObject $columnObject,
+        array $existingColumnConstraints,
         string $platformName
     ): ColumnInterface {
         $object = self::getColumnType($columnObject, $platformName);
@@ -273,6 +281,8 @@ class DdlUtilities
                     $options["identity_maximum"] = $columnObject->getErrata("identity_maximum");
                     $options["identity_cycle"] = $columnObject->getErrata("identity_cycle");
                 }
+
+                $object = new PostgreColumn($object, $existingColumnConstraints);
                 break;
             case Factory::PLATFORM_SQLITE:
                 break;

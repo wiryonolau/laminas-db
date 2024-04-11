@@ -6,7 +6,7 @@ namespace Itseasy\Database\Sql\Ddl\Column;
 
 use Laminas\Db\Sql\Ddl\Column\Integer;
 
-class Identity extends Integer implements PostgresColumnInterface
+class Identity extends Integer implements PostgreColumnInterface
 {
     /**
      * @return array
@@ -14,13 +14,15 @@ class Identity extends Integer implements PostgresColumnInterface
     public function getExpressionData()
     {
         $data    = parent::getExpressionData();
+
         $options = $this->getOptions();
 
-        $data[0][0] = "%s %s";
+        $data[0][0] .= "%s %s";
 
         $data[0][1][1] = sprintf(
-            '%s GENERATED %s AS IDENTITY ( INCREMENT %d START %d MINVALUE %d MAXVALUE %d %sCYCLE)',
+            '%s, ALTER COLUMN %s ADD GENERATED %s AS IDENTITY ( INCREMENT %d START %d MINVALUE %d MAXVALUE %d %sCYCLE)',
             $this->type,
+            $this->getName(),
             empty($options["identity_generation"]) ? "ALWAYS" : $options["identity_generation"],
             empty($options["identity_increment"]) ? 1 : $options["identity_increment"],
             empty($options["identity_start"]) ? 1 : $options["identity_start"],
