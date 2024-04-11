@@ -128,6 +128,7 @@ class TableDiff
                                         $this->platformName,
                                         $existingColumns[$column->getName()],
                                         $existingColumnConstraints,
+                                        true
                                     )
                                 ]
                             );
@@ -142,6 +143,7 @@ class TableDiff
                                         $this->platformName,
                                         $existingColumns[$column->getName()],
                                         $existingColumnConstraints,
+                                        true
                                     )
                                 ]
                             );
