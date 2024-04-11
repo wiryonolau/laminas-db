@@ -26,6 +26,9 @@ class DropIndex extends AbstractSql implements SqlInterface
 
     protected function processDropIndex(?PlatformInterface $adapterPlatform = null)
     {
-        return [$this->table, $this->indexName];
+        return [
+            $adapterPlatform->quoteIdentifier($this->table),
+            $adapterPlatform->quoteIdentifier($this->indexName)
+        ];
     }
 }
