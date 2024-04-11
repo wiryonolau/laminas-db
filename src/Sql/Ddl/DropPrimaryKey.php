@@ -27,6 +27,8 @@ class DropPrimaryKey extends AbstractSql implements SqlInterface
 
     protected function processDropPrimaryKey(?PlatformInterface $adapterPlatform = null)
     {
-        return [$this->table];
+        return [
+            $adapterPlatform->quoteIdentifier($this->table),
+        ];
     }
 }

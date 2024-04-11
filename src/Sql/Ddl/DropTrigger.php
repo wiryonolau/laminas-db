@@ -24,6 +24,8 @@ class DropTrigger extends AbstractSql implements SqlInterface
 
     protected function processTrigger(?PlatformInterface $adapterPlatform = null)
     {
-        return [$this->trigger];
+        return [
+            $adapterPlatform->quoteIdentifier($this->trigger),
+        ];
     }
 }

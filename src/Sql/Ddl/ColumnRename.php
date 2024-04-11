@@ -28,6 +28,10 @@ class ColumnRename extends AbstractSql implements SqlInterface
 
     protected function processColumnRename(?PlatformInterface $adapterPlatform = null)
     {
-        return [$this->table, $this->old_name, $this->new_name];
+        return [
+            $adapterPlatform->quoteIdentifier($this->table),
+            $adapterPlatform->quoteIdentifier($this->old_name),
+            $adapterPlatform->quoteIdentifier($this->new_name)
+        ];
     }
 }

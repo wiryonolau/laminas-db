@@ -26,6 +26,9 @@ class DropForeignKey extends AbstractSql implements SqlInterface
 
     protected function processDropForeignKey(?PlatformInterface $adapterPlatform = null)
     {
-        return [$this->table, $this->foreignKeyName];
+        return [
+            $adapterPlatform->quoteIdentifier($this->table),
+            $adapterPlatform->quoteIdentifier($this->foreignKeyName)
+        ];
     }
 }
