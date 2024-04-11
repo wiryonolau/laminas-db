@@ -73,7 +73,14 @@ class TableDiff
             $existingColumns = [];
             $existingConstraints = [];
 
-            $ddl  = new Ddl\AlterTable($table->getName());
+            switch ($this->platformName) {
+                case Factory::PLATFORM_POSTGRESQL:
+                    $ddl  = new PostgreAlterTable($table->getName());
+                    break;
+                default:
+                    $ddl  = new Ddl\AlterTable($table->getName());
+            }
+
             $hasChange = false;
 
             # Index existing column by name
@@ -104,15 +111,48 @@ class TableDiff
                         continue;
                     }
 
+                    // Check related constraints for this column
+                    /* @var array $column_constraints */
+                    $existingColumnConstraints = array_filter($existingConstraints, function ($c) use ($column) {
+                        return in_array($column->getName(), $c->getColumns());
+                    });
+
                     $hasChange = true;
-                    $ddl->changeColumn(
-                        $column->getName(),
-                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
-                    );
+                    switch ($this->platformName) {
+                        case Factory::PLATFORM_POSTGRESQL:
+                            call_user_func_array(
+                                [$ddl, "alterColumn"],
+                                [
+                                    "name" => $column->getName(),
+                                    "column" => DdlUtilities::columnObjectToDdl(
+                                        $column,
+                                        $existingColumnConstraints,
+                                        $this->platformName,
+                                    )
+                                ]
+                            );
+                            break;
+                        default:
+                            call_user_func_array(
+                                [$ddl, "changeColumn"],
+                                [
+                                    "name" => $column->getName(),
+                                    "column" => DdlUtilities::columnObjectToDdl(
+                                        $column,
+                                        $existingColumnConstraints,
+                                        $this->platformName
+                                    )
+                                ]
+                            );
+                    }
                 } else {
                     $hasChange = true;
                     $ddl->addColumn(
-                        DdlUtilities::columnObjectToDdl($column, $this->platformName)
+                        DdlUtilities::columnObjectToDdl(
+                            $column,
+                            [],
+                            $this->platformName
+                        )
                     );
                 }
 
