@@ -126,8 +126,9 @@ class TableDiff
                                     "name" => $column->getName(),
                                     "column" => DdlUtilities::columnObjectToDdl(
                                         $column,
-                                        $existingColumnConstraints,
                                         $this->platformName,
+                                        $existingTable[$column->getName()],
+                                        $existingColumnConstraints,
                                     )
                                 ]
                             );
@@ -139,8 +140,9 @@ class TableDiff
                                     "name" => $column->getName(),
                                     "column" => DdlUtilities::columnObjectToDdl(
                                         $column,
+                                        $this->platformName,
+                                        $existingTable[$column->getName()],
                                         $existingColumnConstraints,
-                                        $this->platformName
                                     )
                                 ]
                             );
@@ -150,8 +152,9 @@ class TableDiff
                     $ddl->addColumn(
                         DdlUtilities::columnObjectToDdl(
                             $column,
+                            $this->platformName,
+                            null,
                             [],
-                            $this->platformName
                         )
                     );
                 }
