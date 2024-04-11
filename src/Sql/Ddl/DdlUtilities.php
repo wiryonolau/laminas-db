@@ -219,7 +219,8 @@ class DdlUtilities
         ColumnObject $columnObject,
         string $platformName,
         ?ColumnObject $existingColumnObject = null,
-        array $existingColumnConstraints = []
+        array $existingColumnConstraints = [],
+        bool $is_alter = false
     ): ColumnInterface {
         $object = self::getColumnType($columnObject, $platformName);
         $object = new $object($columnObject->getName());
@@ -269,6 +270,8 @@ class DdlUtilities
                 }
                 break;
             case Factory::PLATFORM_POSTGRESQL:
+                $remove_identity = false;
+
                 if (!is_null($columnObject->getErrata("is_identity"))) {
                     $options["is_identity"] = $columnObject->getErrata("is_identity");
                     $options["identity_generation"] = $columnObject->getErrata("identity_generation");
@@ -278,18 +281,18 @@ class DdlUtilities
                     $options["identity_maximum"] = $columnObject->getErrata("identity_maximum");
                     $options["identity_cycle"] = $columnObject->getErrata("identity_cycle");
 
-                    $remove_identity = false;
                     if ($existingColumnObject and $existingColumnObject->getErrata("is_identity")) {
                         $remove_identity = true;
                     }
                 }
 
-
-                $object = new PostgreColumn(
-                    $object,
-                    $remove_identity,
-                    $existingColumnConstraints
-                );
+                if ($is_alter) {
+                    $object = new PostgreColumn(
+                        $object,
+                        $remove_identity,
+                        $existingColumnConstraints
+                    );
+                }
                 break;
             case Factory::PLATFORM_SQLITE:
                 break;
