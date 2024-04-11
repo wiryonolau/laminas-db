@@ -171,11 +171,17 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
                 $erratas['sequence'] = $matches[1];
             }
 
+            $column_default = null;
+            if ($row["column_default"]) {
+                $column_default = explode("::", $row["column_default"]);
+                $column_default = trim($column_default[0] ?? "", '\'"');
+            }
+
             $columns[$row['column_name']] = [
                 'ordinal_position'         => $row['ordinal_position'],
-                'column_default'           => $row['column_default'],
+                'column_default'           => $column_default,
                 'is_nullable'              => 'YES' === $row['is_nullable'],
-                'data_type'                => $row['data_type'],
+                'data_type'                => str_replace(" ", "_", $row['data_type']),
                 'character_maximum_length' => $row['character_maximum_length'],
                 'character_octet_length'   => $row['character_octet_length'],
                 'numeric_precision'        => $row['numeric_precision'],

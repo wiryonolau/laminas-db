@@ -42,11 +42,10 @@ class TableDiff
 
     /**
      * Check if difference exist in given table against existing table
-     * If table definition is created from metadata make sure to ignoreConstraintPrefix
+     * WARNING Doesn't handle column rename, renaming column will drop old column and create a new column
      * 
      * @param AbstractTableObject   $table                    New Table Definition
      * @param AbstractTableObject   $existingTable            Old table definition, default retrieve from metadata
-     * @param bool                  $ignoreConstraintPrefix   Ignore adding table prefix to constraint name
      * 
      * @return Ddl\SqlInterface[] | Ddl\SqlInterface
      */
@@ -127,7 +126,7 @@ class TableDiff
                                     "column" => DdlUtilities::columnObjectToDdl(
                                         $column,
                                         $this->platformName,
-                                        $existingTable[$column->getName()],
+                                        $existingColumns[$column->getName()],
                                         $existingColumnConstraints,
                                     )
                                 ]
@@ -141,7 +140,7 @@ class TableDiff
                                     "column" => DdlUtilities::columnObjectToDdl(
                                         $column,
                                         $this->platformName,
-                                        $existingTable[$column->getName()],
+                                        $existingColumns[$column->getName()],
                                         $existingColumnConstraints,
                                     )
                                 ]

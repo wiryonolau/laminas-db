@@ -9,9 +9,8 @@ use Laminas\Db\Sql\Ddl\Column;
 
 class PostgreAlterTable extends AlterTable
 {
-    public const ALTER_COLUMNS    = 'alterColumns';
+    public const ALTER_COLUMNS  = 'alterColumns';
 
-    /** @var array */
     protected $alterColumns = [];
 
     /**
