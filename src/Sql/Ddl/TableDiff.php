@@ -82,6 +82,7 @@ class TableDiff
 
             $hasChange = false;
 
+
             # Index existing column by name
             foreach ($existingTable->getColumns() as $column) {
                 $existingColumns[$column->getName()] = $column;
@@ -100,6 +101,21 @@ class TableDiff
                 if (
                     isset($existingColumns[$column->getName()])
                 ) {
+                    $columnNewName = $table->getColumnNewName($column->getName());
+
+                    // Column already renamed
+                    if ($columnNewName and $existingColumns[$columnNewName]) {
+                        $column->setName($columnNewName);
+                    }
+
+                    // Column need rename, run rename ddl first
+                    if ($columnNewName and !$existingColumns[$columnNewName]) {
+                        $ddls[] = new ColumnRename($table->getName(), $column->getName(), $columnNewName);
+                        // Update column with new name
+                        $column->setName($columnNewName);
+                    }
+
+
                     if (!DdlUtilities::columnHasUpdate(
                         $existingColumns[$column->getName()],
                         $column,

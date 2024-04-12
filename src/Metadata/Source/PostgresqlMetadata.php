@@ -6,7 +6,9 @@ use Exception;
 use Itseasy\Database\Metadata\Object\PostgresqlIndexObject;
 use Itseasy\Database\Metadata\Object\RoutineObject;
 use Itseasy\Database\Metadata\Object\SequenceObject;
+use Itseasy\Database\Metadata\Object\TableObject;
 use Laminas\Db\Adapter\Adapter;
+use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Source\PostgresqlMetadata as SourcePostgresqlMetadata;
 use Throwable;
 
@@ -43,6 +45,42 @@ class PostgresqlMetadata extends SourcePostgresqlMetadata
             "routines" => $this->getRoutines(),
             "indexes" => $this->getIndexes()
         ];
+    }
+
+    /**
+     * @throw Exception
+     */
+    public function getTable($tableName, $schema = null): AbstractTableObject
+    {
+        if ($schema === null) {
+            $schema = $this->defaultSchema;
+        }
+
+        $this->loadTableNameData($schema);
+
+        if (!isset($this->data['table_names'][$schema][$tableName])) {
+            throw new Exception('Table "' . $tableName . '" does not exist');
+        }
+
+        $data = $this->data['table_names'][$schema][$tableName];
+        switch ($data['table_type']) {
+            case 'BASE TABLE':
+                $table = new TableObject($tableName);
+                break;
+            case 'VIEW':
+                $table = new ViewObject($tableName);
+                $table->setViewDefinition($data['view_definition']);
+                $table->setCheckOption($data['check_option']);
+                $table->setIsUpdatable($data['is_updatable']);
+                break;
+            default:
+                throw new Exception(
+                    'Table "' . $tableName . '" is of an unsupported type "' . $data['table_type'] . '"'
+                );
+        }
+        $table->setColumns($this->getColumns($tableName, $schema));
+        $table->setConstraints($this->getConstraints($tableName, $schema));
+        return $table;
     }
 
     public function getSequenceNames($schema = null)

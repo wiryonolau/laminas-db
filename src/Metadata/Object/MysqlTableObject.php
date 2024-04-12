@@ -2,8 +2,6 @@
 
 namespace Itseasy\Database\Metadata\Object;
 
-use Laminas\Db\Metadata\Object\TableObject;
-
 class MysqlTableObject extends TableObject
 {
     protected $charset;

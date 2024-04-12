@@ -120,6 +120,8 @@ class DdlUtilities
                 return "Integer";
             case "longtext":
                 return "Text";
+            case "timestamp_without_time_zone":
+                return "Timestamp";
             default:
                 return ucfirst($type);
         }
