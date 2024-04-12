@@ -92,7 +92,8 @@ class TableDiff
             foreach ($existingTable->getConstraints() as $constraint) {
                 // $existingConstraints[$constraint->getName()] = $constraint;
                 $constraint = DdlUtilities::filterConstraint(
-                    $constraint
+                    $constraint,
+                    $this->platformName
                 );
                 $existingConstraints[$constraint->getName()] = $constraint;
             }
@@ -190,7 +191,8 @@ class TableDiff
             if (!empty($table->getConstraints())) {
                 foreach ($table->getConstraints() as $constraint) {
                     $constraint = DdlUtilities::filterConstraint(
-                        $constraint
+                        $constraint,
+                        $this->platformName
                     );
 
                     if (isset($existingConstraints[$constraint->getName()])) {
