@@ -312,7 +312,8 @@ class DdlUtilities
         bool $tableExist = false
     ): ConstraintInterface {
         $constraintObject = self::filterConstraint(
-            $constraintObject
+            $constraintObject,
+            $platformName
         );
 
         switch ($constraintObject->getType()) {
@@ -526,7 +527,10 @@ class DdlUtilities
         }
 
         // UNIQUE, INDEX, CHECK constraint
-        $constraint = self::filterConstraint($constraint);
+        $constraint = self::filterConstraint(
+            $constraint,
+            $platformName,
+        );
 
         // Foreign key doesn't have prefix pass constraint name as is
         if ($constraint->getType() == "FOREIGN KEY") {
@@ -578,14 +582,21 @@ class DdlUtilities
      * - Remove table prefix from constraint name
      */
     public static function filterConstraint(
-        ConstraintObject $constraint
+        ConstraintObject $constraint,
+        ?string $platformName = null,
     ): ConstraintObject {
         if ($constraint->getType() == "FOREIGN KEY") {
             return $constraint;
         }
 
         if ($constraint->getType() == "PRIMARY KEY") {
-            $constraint->setName("PRIMARY");
+            switch ($platformName) {
+                case Factory::PLATFORM_MYSQL:
+                case Factory::PLATFORM_MARIADB:
+                    $constraint->setName("PRIMARY");
+                    break;
+                default:
+            }
             return $constraint;
         }
 
