@@ -4,6 +4,7 @@ namespace Itseasy\Database\Metadata\Hydrator;
 
 use Exception;
 use Itseasy\Database\Metadata\Object\MysqlTableObject;
+use Itseasy\Database\Metadata\Object\TableObject as ItseasyTableObject;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ColumnObject;
 use Laminas\Db\Metadata\Object\ConstraintObject;
@@ -68,7 +69,7 @@ class TableObjectHydrator extends AbstractHydrator
             "name" => $object->getName(),
         ];
 
-        if ($object instanceof TableObject) {
+        if ($object instanceof TableObject or $object instanceof ItseasyTableObject) {
             $array["table_type"] = "BASE TABLE";
         } else if ($object instanceof ViewObject) {
             $array["table_type"] = "VIEW";
