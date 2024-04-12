@@ -9,6 +9,7 @@ use Itseasy\Database\Metadata\Object\SequenceObject;
 use Itseasy\Database\Metadata\Object\TableObject;
 use Laminas\Db\Adapter\Adapter;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
+use Laminas\Db\Metadata\Object\ViewObject;
 use Laminas\Db\Metadata\Source\PostgresqlMetadata as SourcePostgresqlMetadata;
 use Throwable;
 
