@@ -29,7 +29,6 @@ build:
 unittest-pg:
 	$(MAKE) -s build
 	docker network create ${PROJECT_NAME} 2>/dev/null || true
-	docker stop ${PROJECT_NAME}_postgres10 2>/dev/null || true
 	docker run --rm -d  \
         -e POSTGRES_PASSWORD=888888 \
         -v $$(pwd)/tests/db/postgres:/docker-entrypoint-initdb.d \
@@ -49,17 +48,15 @@ unittest-pg:
         --name ${PROJECT_NAME}_cli \
         --network ${PROJECT_NAME} \
 	php:$(PHP_VERSION)-cli-ext vendor/bin/phpunit --verbose --debug tests 
-	docker stop ${PROJECT_NAME}_postgres10 2>/dev/null || true
 unittest-mariadb:
 	$(MAKE) -s build
 	docker network create ${PROJECT_NAME} 2>/dev/null || true
-	docker stop ${PROJECT_NAME}_mariadb10  2>/dev/null || true
 	docker run --rm -d \
         -e MYSQL_ROOT_PASSWORD=888888 \
         -v $$(pwd)/tests/db/mysql:/docker-entrypoint-initdb.d \
         --network ${PROJECT_NAME} \
         --name ${PROJECT_NAME}_mariadb10 \
-        mariadb:10
+        mariadb:10 || true
 	@while [ "$$( docker exec -it ${PROJECT_NAME}_mariadb10 mysqladmin ping --user=root --password=888888 -h localhost > /dev/null && echo 1 || echo 0 )" -eq "0" ]; do \
        	echo "Awaiting port mariadb10 to be ready" ; \
        	sleep 1; \
@@ -73,34 +70,30 @@ unittest-mariadb:
         --name ${PROJECT_NAME}_cli \
         --network ${PROJECT_NAME} \
 	php:$(PHP_VERSION)-cli-ext vendor/bin/phpunit --verbose --debug tests 
-	docker stop ${PROJECT_NAME}_mariadb10 2>/dev/null || true
 unittest-mysql:
 	$(MAKE) -s build
-	docker network create ${PROJECT_NAME} 2>/dev/null || true
-	docker stop ${PROJECT_NAME}_mysql57 2>/dev/null || true
 	docker run --rm -d \
         -e MYSQL_ROOT_PASSWORD=888888 \
         -p 3357:3357 \
         -v $$(pwd)/tests/db/mysql:/docker-entrypoint-initdb.d \
         --network ${PROJECT_NAME} \
         --name ${PROJECT_NAME}_mysql57 \
-        mysql:5.7
+        mysql:5.7 || true
 	@while [ "$$( docker exec -it ${PROJECT_NAME}_mysql57 mysqladmin ping --user=root --password=888888 -h localhost > /dev/null && echo 1 || echo 0 )" -eq "0" ]; do \
        	echo "Awaiting port mysql57 to be ready" ; \
        	sleep 1; \
 	done
-	docker stop ${PROJECT_NAME}_mysql80 2>/dev/null || true
 	docker run --rm -d \
         -e MYSQL_ROOT_PASSWORD=888888 \
         -v $$(pwd)/tests/db/mysql:/docker-entrypoint-initdb.d \
         --network ${PROJECT_NAME} \
         --name ${PROJECT_NAME}_mysql80 \
-        mysql:8.0
+        mysql:8.0 || true
 	@while [ "$$( docker exec -it ${PROJECT_NAME}_mysql80 mysqladmin ping --user=root --password=888888 -h localhost > /dev/null && echo 1 || echo 0 )" -eq "0" ]; do \
        	echo "Awaiting port mysql80 to be ready" ; \
        	sleep 1; \
 	done
-	sleep 5
+	sleep 10
 	docker run --rm -it \
 	    -v $$(pwd):/srv/${PROJECT_NAME} \
 		-w /srv/${PROJECT_NAME} \
@@ -109,6 +102,9 @@ unittest-mysql:
         --name ${PROJECT_NAME}_cli \
         --network ${PROJECT_NAME} \
 	php:$(PHP_VERSION)-cli-ext vendor/bin/phpunit --verbose --debug tests 
+unittest-clean:
+	docker stop ${PROJECT_NAME}_postgres10 2>/dev/null || true
+	docker stop ${PROJECT_NAME}_mariadb10 2>/dev/null || true
 	docker stop ${PROJECT_NAME}_mysql57 2>/dev/null|| true
 	docker stop ${PROJECT_NAME}_mysql80 2>/dev/null || true 
 composer-install:
