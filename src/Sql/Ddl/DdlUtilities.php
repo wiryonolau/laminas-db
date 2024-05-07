@@ -583,7 +583,7 @@ class DdlUtilities
      */
     public static function filterConstraint(
         ConstraintObject $constraint,
-        ?string $platformName = null,
+        ?string $platformName = null
     ): ConstraintObject {
         if ($constraint->getType() == "FOREIGN KEY") {
             return $constraint;
