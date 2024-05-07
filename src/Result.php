@@ -17,6 +17,7 @@ class Result implements ItseasyResultInterface
 {
     protected $errors = [];
     protected $resultSet;
+    protected $columnFields = [];
     protected $lastGeneratedValue;
     protected $affectedRows = 0;
     protected $resultSetObjectPrototype;
@@ -81,6 +82,13 @@ class Result implements ItseasyResultInterface
         if ($result->isQueryResult()) {
             $rowset = $result->getResource()->fetchAll(\PDO::FETCH_ASSOC);
             $this->resultSet->initialize($rowset);
+
+            $column_count = $result->getResource()->columnCount();
+            for ($i = 0; $i < $column_count; $i++) {
+                $this->addColumnField(
+                    $result->getResource()->getColumnMeta($i)
+                );
+            }
         }
         $this->setGeneratedValue(intval($result->getGeneratedValue()));
         $this->setAffectedRows(intval($result->getAffectedRows()));
@@ -95,6 +103,21 @@ class Result implements ItseasyResultInterface
             $errors = array_map('trim', explode('-', $matches[1]));
             $this->errors[] = end($errors);
         }
+    }
+
+    public function addColumnField($column): void
+    {
+        $this->columnFields[] = $column;
+    }
+
+    public function getColumnFields(): array
+    {
+        return $this->columnFields;
+    }
+
+    public function getColumnNames(): array
+    {
+        return array_column($this->getColumnFields(), 'name');
     }
 
     protected function setGeneratedValue(?int $value): void
