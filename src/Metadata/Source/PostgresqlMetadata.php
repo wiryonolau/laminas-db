@@ -15,6 +15,8 @@ use Throwable;
 
 class PostgresqlMetadata extends SourcePostgresqlMetadata
 {
+    protected $version;
+
     public function  __construct(Adapter $adapter)
     {
         parent::__construct($adapter);
