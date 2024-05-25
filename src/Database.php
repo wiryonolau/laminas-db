@@ -9,6 +9,7 @@ use Laminas\Db\Adapter\Driver\StatementInterface;
 use Laminas\Db\Adapter\Exception\RuntimeException;
 use Laminas\Db\Adapter\ExceptionInterface;
 use Laminas\Db\Adapter\ParameterContainer;
+use Laminas\Db\Adapter\Platform\PlatformInterface;
 use Laminas\Db\Sql\Sql;
 use Laminas\Db\Sql\SqlInterface;
 use Laminas\Log\LoggerAwareInterface;
@@ -42,6 +43,11 @@ class Database implements LoggerAwareInterface
     public function getAdapter(): AdapterInterface
     {
         return $this->dbAdapter;
+    }
+
+    public function getPlatform(): PlatformInterface
+    {
+        return $this->dbAdapter->getPlatform();
     }
 
     public function inTransaction(): bool
