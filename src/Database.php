@@ -3,8 +3,11 @@
 namespace Itseasy\Database;
 
 use Exception;
+use Itseasy\Database\Metadata\Source\Factory;
 use Laminas\Db\Adapter\AdapterInterface;
 use Laminas\Db\Adapter\Driver\AbstractConnection;
+use Laminas\Db\Adapter\Driver\ConnectionInterface;
+use Laminas\Db\Adapter\Driver\DriverInterface;
 use Laminas\Db\Adapter\Driver\StatementInterface;
 use Laminas\Db\Adapter\Exception\RuntimeException;
 use Laminas\Db\Adapter\ExceptionInterface;
@@ -40,16 +43,41 @@ class Database implements LoggerAwareInterface
         $this->setLogger($logger);
     }
 
+    /**
+     * Fluent interface
+     */
     public function getAdapter(): AdapterInterface
     {
         return $this->dbAdapter;
     }
 
+    /**
+     * Fluent interface
+     */
     public function getPlatform(): PlatformInterface
     {
         return $this->dbAdapter->getPlatform();
     }
 
+    /**
+     * Fluent interface
+     */
+    public function getDriver(): DriverInterface
+    {
+        return $this->dbAdapter->getDriver();
+    }
+
+    /**
+     * Fluent interface
+     */
+    public function getConnection(): ConnectionInterface
+    {
+        return $this->dbAdapter->getDriver()->getConnection();
+    }
+
+    /**
+     * Fluent interface
+     */
     public function inTransaction(): bool
     {
         return $this->dbAdapter->getDriver()->getConnection()->inTransaction();
@@ -95,10 +123,11 @@ class Database implements LoggerAwareInterface
         $this->transactionCounter = 0;
 
         // Can only be set on first level transaction
-        switch ($this->dbAdapter->getDriver()->getConnection()->getDriverName()) {
-            case "mysql":
-            case "mssql":
-            case "pgsql":
+        switch ($this->getPlatform()->getName()) {
+            case Factory::PLATFORM_SQLSERVER:
+            case Factory::PLATFORM_MARIADB:
+            case Factory::PLATFORM_MYSQL:
+            case Factory::PLATFORM_POSTGRESQL:
                 $this->execute(sprintf("SET TRANSACTION ISOLATION LEVEL %s", $isolation_level));
                 break;
             default:
