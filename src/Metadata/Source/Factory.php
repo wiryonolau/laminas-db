@@ -9,9 +9,11 @@ use Laminas\Db\Metadata\MetadataInterface;
 
 class Factory extends LaminasSourceFactory
 {
+    // Check name with Laminas\Db\Adapter]Platform
     const PLATFORM_MYSQL = "MySQL";
     const PLATFORM_MARIADB = "MariaDB";
     const PLATFORM_POSTGRESQL = "PostgreSQL";
+    const PLATFORM_SQLSERVER = "SqlServer";
     const PLATFORM_SQLITE = "SQLite";
     const PLATFORM_ORACLE = "Oracle";
 
@@ -20,6 +22,7 @@ class Factory extends LaminasSourceFactory
         self::PLATFORM_MYSQL,
         self::PLATFORM_POSTGRESQL,
         self::PLATFORM_SQLITE,
+        self::PLATFORM_SQLSERVER,
         self::PLATFORM_ORACLE
     ];
 
