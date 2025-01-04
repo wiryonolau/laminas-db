@@ -125,7 +125,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
                 "driver_options" => $driver_options
             ]);
         } else {
-            $pdo =  new PDO($dsn, $username, $password, $driver_options);
+            $pdo = new PDO($dsn, $username, $password, $driver_options);
             $this->adapter = new Adapter(new LaminasPdo($pdo));
         }
     }
