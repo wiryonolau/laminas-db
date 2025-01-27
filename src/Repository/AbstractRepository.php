@@ -49,7 +49,8 @@ abstract class AbstractRepository implements
     public function getRowByIdentifier(
         $value,
         string $identifier = "id",
-        $objectPrototype = null
+        $objectPrototype = null,
+        array $columns = []
     ) {
         $this->triggerRepositoryEvent(
             "select",
@@ -58,6 +59,11 @@ abstract class AbstractRepository implements
         );
 
         $select = new Sql\Select($this->table);
+
+        if (!empty($columns)) {
+            $select->columns($columns);
+        }
+
         $select->where([
             $identifier => $value
         ]);
@@ -87,7 +93,8 @@ abstract class AbstractRepository implements
         ?int $offset = null,
         ?int $limit = null,
         $resultSetObjectPrototype = null,
-        $objectPrototype = null
+        $objectPrototype = null,
+        array $columns = []
     ) {
         $this->triggerRepositoryEvent(
             "select",
@@ -96,6 +103,11 @@ abstract class AbstractRepository implements
         );
 
         $select = new Sql\Select($this->table);
+
+        if (!empty($columns)) {
+            $select->columns($columns);
+        }
+
         $select->where($where);
 
         if (is_string($orders) and !empty(trim($orders))) {
@@ -127,7 +139,8 @@ abstract class AbstractRepository implements
     }
 
     public function getRowCount(
-        array $where = []
+        array $where = [],
+        string $column = null
     ): int {
         $this->triggerRepositoryEvent(
             "select",
@@ -139,7 +152,12 @@ abstract class AbstractRepository implements
 
         try {
             $select = new Sql\Select($this->table);
-            $select->columns(["num" => new Expression("COUNT(*)")]);
+
+            if (empty($column)) {
+                $select->columns(["num" => new Expression("COUNT(*)")]);
+            } else {
+                $select->columns(["num" => new Expression(sprintf("COUNT(%s)", trim($column)))]);
+            }
             $select->where($where);
 
             $result = $this->db->execute($select);
@@ -166,7 +184,8 @@ abstract class AbstractRepository implements
         ?int $offset = null,
         ?int $limit = null,
         $resultSetObjectPrototype = null,
-        $objectPrototype = null
+        $objectPrototype = null,
+        array $columns = []
     ) {
         $this->triggerRepositoryEvent(
             "select",
@@ -175,6 +194,10 @@ abstract class AbstractRepository implements
         );
 
         $select = new Sql\Select($this->table);
+
+        if (!empty($columns)) {
+            $select->columns($columns);
+        }
 
         $select = $this->applyFilter($select, $filters, $this->getFilterCombination());
 
@@ -207,7 +230,8 @@ abstract class AbstractRepository implements
     }
 
     public function getFilterAwareRowCount(
-        string $filters = ""
+        string $filters = "",
+        ?string $column = null
     ): int {
         $this->triggerRepositoryEvent(
             "select",
@@ -219,7 +243,12 @@ abstract class AbstractRepository implements
 
         try {
             $select = new Sql\Select($this->table);
-            $select->columns(["num" => new Expression("COUNT(*)")]);
+
+            if (empty($column)) {
+                $select->columns(["num" => new Expression("COUNT(*)")]);
+            } else {
+                $select->columns(["num" => new Expression(sprintf("COUNT(%s)", trim($column)))]);
+            }
             $select = $this->applyFilter($select, $filters, $this->getFilterCombination());
             $result = $this->db->execute($select);
 
