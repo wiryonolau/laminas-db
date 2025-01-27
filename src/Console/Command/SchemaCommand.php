@@ -35,8 +35,9 @@ class SchemaCommand extends Command implements LoggerAwareInterface
         $this->addOption("dsn", null, InputOption::VALUE_REQUIRED, implode("\n", [
             "Connection DSN, Must be active Database and User",
             "Use of environment also supported",
-            " DB_DRIVER, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD"
+            " DB_DRIVER, DB_HOSTNAME, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD"
         ]));
+
         $this->addOption("disable-fk", null, InputOption::VALUE_NONE, "Disable foreign key check");
         $this->addOption("apply", "a", InputOption::VALUE_NONE, "Apply diff");
     }
