@@ -14,7 +14,7 @@ use Laminas\Db\Metadata\Object\TriggerObject;
 class TriggerDiff
 {
     protected $metadata;
-
+    protected $driver;
     protected $adapter;
 
     // array of table name
