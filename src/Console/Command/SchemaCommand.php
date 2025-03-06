@@ -39,6 +39,7 @@ class SchemaCommand extends Command implements LoggerAwareInterface
         ]));
 
         $this->addOption("disable-fk", null, InputOption::VALUE_NONE, "Disable foreign key check");
+        $this->addOption("remove-undefined", null, InputOption::VALUE_NONE, "Remove table if not specify by schema file");
         $this->addOption("apply", "a", InputOption::VALUE_NONE, "Apply diff");
     }
 
@@ -49,13 +50,14 @@ class SchemaCommand extends Command implements LoggerAwareInterface
         $dsn = $input->getOption("dsn");
         $username = $input->getOption("username");
         $password = $input->getOption("password");
+        $removeUndefined = $input->getOption("remove-undefined", false);
         $apply = $input->getOption("apply");
         $disableFk = $input->getOption("disable-fk", false);
 
         $this->createAdapter($dsn, $username, $password);
         $schema = include $schema_file;
 
-        $ddls = SchemaDiff::diff($schema, $this->adapter);
+        $ddls = SchemaDiff::diff($schema, $this->adapter, $removeUndefined);
 
         $platform = $this->adapter->getPlatform()->getName();
 

@@ -40,6 +40,11 @@ class TableDiff
         }
     }
 
+    public function getTables(bool $includeViews = true): array
+    {
+        return $this->metadata->getTables(null, $includeViews);
+    }
+
     /**
      * Check if difference exist in given table against existing table
      * WARNING Doesn't handle column rename, renaming column will drop old column and create a new column

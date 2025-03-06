@@ -18,6 +18,7 @@ use Itseasy\Database\Sql\Ddl\View\CreateView;
 use Itseasy\Database\Sql\Ddl\View\MysqlCreateView;
 use Laminas\Db\Metadata\Object\AbstractTableObject;
 use Laminas\Db\Metadata\Object\ViewObject;
+use Laminas\Db\Sql\Ddl\DropTable;
 use Laminas\Db\Sql\Sql;
 use Laminas\Hydrator\ClassMethodsHydrator;
 use Laminas\Db\Sql\SqlInterface;
@@ -29,8 +30,11 @@ use Laminas\Db\Sql\SqlInterface;
  */
 class SchemaDiff
 {
-    public static function diff(array $schema, AdapterInterface $adapter): array
-    {
+    public static function diff(
+        array $schema,
+        AdapterInterface $adapter,
+        bool $removeUndefined = false
+    ): array {
         $tableDiff = new TableDiff($adapter);
         $triggerDiff = new TriggerDiff($adapter);
         $sql = new Sql($adapter);
@@ -50,7 +54,23 @@ class SchemaDiff
         }
 
         $schema = self::hydrate($schema, $tableObject);
+
         $ddl_string = [];
+
+        if ($removeUndefined) {
+            // Remove table not define in the new schema
+            $schema_tables = array_map(function ($table) {
+                return $table->getName();
+            }, $schema["tables"]);
+            $existingTables = $tableDiff->getTables(false);
+
+            foreach ($existingTables as $table) {
+                if (!in_array($table->getName(), $schema_tables)) {
+                    $ddl = new DropTable($table->getName());
+                    $ddl_string[] = $sql->buildSqlString($ddl);
+                }
+            }
+        }
 
         foreach ($schema["tables"] as $table) {
             // Remove empty ddl 
